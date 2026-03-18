@@ -29,7 +29,7 @@ export async function GET() {
     );
   }
 
-  const result = servers.map((server) => {
+  const dbResult = servers.map((server) => {
     const mem = memoryMap.get(server.id);
     const info = mem?.getInfo();
     const isOwner = server.userId === currentUser.id;
@@ -46,5 +46,24 @@ export async function GET() {
     return mcpInfo;
   });
 
-  return Response.json(result);
+  // Also include memory clients that are not in DB (file-based or temporary)
+  const dbIds = new Set(servers.map((s) => s.id));
+  const memoryOnlyResult = memoryClients
+    .filter((c) => !dbIds.has(c.id))
+    .map(({ id, client }) => {
+      const info = client.getInfo();
+      return {
+        ...info,
+        id,
+        userId: currentUser.id, // Treat current user as owner for display purposes
+        visibility: "private" as const,
+        enabled: info.enabled ?? true,
+        status: info.status ?? "disconnected",
+        lastConnectionStatus: info.lastConnectionStatus,
+        error: info.error,
+        toolInfo: info.toolInfo ?? [],
+      } as MCPServerInfo;
+    });
+
+  return Response.json([...dbResult, ...memoryOnlyResult]);
 }

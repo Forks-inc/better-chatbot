@@ -11,11 +11,30 @@ import {
   getCurrentUser,
 } from "lib/auth/permissions";
 
+import { FILE_BASED_MCP_CONFIG } from "lib/const";
+
 export async function selectMcpClientsAction() {
   // Get current user to filter MCP servers
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return [];
+  }
+
+  // Get all active clients
+  const list = await mcpClientsManager.getClients();
+
+  if (FILE_BASED_MCP_CONFIG) {
+    return list.map(({ client, id }) => {
+      const info = client.getInfo();
+      return {
+        ...info,
+        id,
+        userId: currentUser.id,
+        visibility: "private" as const,
+        isOwner: true,
+        canManage: true,
+      };
+    });
   }
 
   // Get all MCP servers the user can access (their own + shared)
@@ -24,8 +43,7 @@ export async function selectMcpClientsAction() {
   );
   const accessibleIds = new Set(accessibleServers.map((s) => s.id));
 
-  // Get all active clients and filter to only accessible ones
-  const list = await mcpClientsManager.getClients();
+  // Filter to only accessible ones
   return list
     .filter(({ id }) => accessibleIds.has(id))
     .map(({ client, id }) => {
@@ -48,9 +66,26 @@ export async function selectMcpClientAction(id: string) {
   if (!client) {
     throw new Error("Client not found");
   }
+
+  if (FILE_BASED_MCP_CONFIG) {
+    return {
+      ...client.client.getInfo(),
+      id,
+      userId: "file-based-user",
+      visibility: "private" as const,
+      isOwner: true,
+      canManage: true,
+    };
+  }
+
+  // Get server from DB for additional info
+  const server = await mcpRepository.selectById(id);
+
   return {
     ...client.client.getInfo(),
     id,
+    userId: server?.userId,
+    visibility: server?.visibility,
   };
 }
 
@@ -115,6 +150,17 @@ export async function existMcpClientByServerNameAction(serverName: string) {
 }
 
 export async function removeMcpClientAction(id: string) {
+  if (FILE_BASED_MCP_CONFIG) {
+    // In file-based mode, the manager handles removal from the file
+    // We check if it exists in the manager first
+    const client = await mcpClientsManager.getClient(id);
+    if (!client) {
+      throw new Error("MCP server not found");
+    }
+    await mcpClientsManager.removeClient(id);
+    return;
+  }
+
   // Get the MCP server to check ownership
   const mcpServer = await mcpRepository.selectById(id);
   if (!mcpServer) {
