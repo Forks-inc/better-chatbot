@@ -14,6 +14,9 @@ import {
   FileSpreadsheet,
   Presentation,
   Loader2,
+  Maximize2,
+  Minimize2,
+  Scissors,
 } from "lucide-react";
 import { Button } from "ui/button";
 import { cn } from "lib/utils";
@@ -53,12 +56,32 @@ function getDefaultTab(type: string | undefined): ActiveTab {
   return "code";
 }
 
-function getTypeIcon(type: string | undefined) {
+function TypeIcon({ type }: { type: string | undefined }) {
   if (type === "application/vnd.spreadsheet")
-    return <FileSpreadsheet className="size-3.5 text-green-500" />;
+    return <FileSpreadsheet className="size-3.5 text-green-500 shrink-0" />;
   if (type === "application/vnd.presentation")
-    return <Presentation className="size-3.5 text-blue-500" />;
+    return <Presentation className="size-3.5 text-blue-500 shrink-0" />;
   return null;
+}
+
+/** Types that support refresh (iframe-based previews) */
+function supportsRefresh(type: string | undefined) {
+  return (
+    type === "text/html" ||
+    type === "application/vnd.code-html" ||
+    type === "application/vnd.react" ||
+    type === "application/vnd.ant.react"
+  );
+}
+
+/** Types that support screen capture */
+function supportsCapture(type: string | undefined) {
+  return (
+    type === "text/html" ||
+    type === "application/vnd.code-html" ||
+    type === "application/vnd.react" ||
+    type === "application/vnd.ant.react"
+  );
 }
 
 export function ArtifactPanel({
@@ -74,6 +97,9 @@ export function ArtifactPanel({
   );
   const [currentCode, setCurrentCode] = useState<string | undefined>();
   const [exporting, setExporting] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [capturing, setCapturing] = useState(false);
   const { copied, copy } = useCopy();
 
   const handleContentChange = useCallback((content: string) => {
@@ -132,9 +158,33 @@ export function ArtifactPanel({
     const a = document.createElement("a");
     a.href = url;
     a.download = `${artifact.title.replace(/[^a-zA-Z0-9]/g, "_")}.${ext}`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, [artifact, isPresentation, isSpreadsheet]);
+
+  const handleCapture = useCallback(
+    (data: { selectionImg: string; artifactImg: string }) => {
+      // Copy selection image to clipboard if available
+      fetch(data.selectionImg)
+        .then((r) => r.blob())
+        .then((blob) => {
+          const item = new ClipboardItem({ "image/png": blob });
+          return navigator.clipboard.write([item]);
+        })
+        .catch(() => {
+          // Fallback: download the image
+          const a = document.createElement("a");
+          a.href = data.selectionImg;
+          a.download = "capture.png";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        });
+    },
+    [],
+  );
 
   if (!artifact) return null;
 
@@ -144,8 +194,18 @@ export function ArtifactPanel({
     artifact.type !== "text/markdown" &&
     artifact.type !== "application/vnd.python";
 
-  return (
-    <div className="flex h-full w-full flex-col bg-background border-l border-border">
+  const showRefresh =
+    activeTab === "preview" && supportsRefresh(artifact.type) && !isStreaming;
+  const showCapture =
+    activeTab === "preview" && supportsCapture(artifact.type) && !isStreaming;
+
+  const panelContent = (
+    <div
+      className={cn(
+        "flex flex-col bg-background border-border",
+        fullscreen ? "fixed inset-0 z-50 border" : "h-full w-full border-l",
+      )}
+    >
       {/* Row 1: tabs (left) + actions (right) */}
       <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-3 py-2">
         {/* Tab Toggle + streaming indicator */}
@@ -213,6 +273,35 @@ export function ArtifactPanel({
             </>
           )}
 
+          {/* Refresh (HTML/React previews only) */}
+          {showRefresh && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-7"
+              title="Refresh preview"
+              onClick={() => setRefreshKey((k) => k + 1)}
+            >
+              <RefreshCw className="size-3.5" />
+            </Button>
+          )}
+
+          {/* Capture / screenshot */}
+          {showCapture && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className={cn(
+                "size-7",
+                capturing && "text-primary bg-primary/10",
+              )}
+              title="Capture selection"
+              onClick={() => setCapturing((v) => !v)}
+            >
+              <Scissors className="size-3.5" />
+            </Button>
+          )}
+
           {/* Copy */}
           <Button
             size="icon"
@@ -252,6 +341,21 @@ export function ArtifactPanel({
 
           <div className="w-px h-4 bg-border mx-0.5" />
 
+          {/* Fullscreen */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+            onClick={() => setFullscreen((v) => !v)}
+          >
+            {fullscreen ? (
+              <Minimize2 className="size-3.5" />
+            ) : (
+              <Maximize2 className="size-3.5" />
+            )}
+          </Button>
+
           {/* Close */}
           <Button
             size="icon"
@@ -266,7 +370,7 @@ export function ArtifactPanel({
 
       {/* Row 2: title + type badge */}
       <div className="flex items-center gap-2 border-b border-border bg-muted/10 px-4 py-1.5 min-h-[32px]">
-        {getTypeIcon(artifact.type)}
+        <TypeIcon type={artifact.type} />
         <span className="text-xs font-medium truncate text-foreground/80 flex-1 min-w-0">
           {artifact.title}
         </span>
@@ -290,9 +394,18 @@ export function ArtifactPanel({
         ) : isSpreadsheet ? (
           <SpreadsheetPreview artifact={artifact} />
         ) : (
-          <ArtifactPreview artifact={artifact} currentCode={currentCode} />
+          <ArtifactPreview
+            artifact={artifact}
+            currentCode={currentCode}
+            capturing={capturing}
+            onCapture={handleCapture}
+            onCaptureEnd={() => setCapturing(false)}
+            refreshKey={refreshKey}
+          />
         )}
       </div>
     </div>
   );
+
+  return panelContent;
 }

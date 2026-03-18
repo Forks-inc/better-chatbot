@@ -64,6 +64,11 @@ import dynamic from "next/dynamic";
 import { notify } from "lib/notify";
 import { ModelProviderIcon } from "ui/model-provider-icon";
 import { appStore } from "@/app/store";
+import {
+  parseMessageArtifacts,
+  stripArtifactTags,
+  hasArtifactTags,
+} from "lib/artifacts/parse-message-artifacts";
 import { BACKGROUND_COLORS, EMOJI_DATA } from "lib/const";
 
 type MessagePart = UIMessage["parts"][number];
@@ -308,6 +313,41 @@ export const AssistMessagePart = memo(function AssistMessagePart({
     return agentList.find((a) => a.id === metadata?.agentId);
   }, [metadata, agentList]);
 
+  // Sync <artifact> XML tags from text into the artifact store
+  useEffect(() => {
+    if (!hasArtifactTags(part.text)) return;
+    const parsed = parseMessageArtifacts(part.text);
+    const newArtifacts: Record<string, any> = {};
+    let lastId: string | null = null;
+    for (const p of parsed) {
+      if (p.type === "artifact" && p.artifact && !p.artifact.generating) {
+        newArtifacts[p.artifact.id] = {
+          id: p.artifact.id,
+          title: p.artifact.title,
+          content: p.artifact.content,
+          type: p.artifact.type,
+          language: p.artifact.language,
+          messageId: message.id,
+          lastUpdateTime: Date.now(),
+        };
+        lastId = p.artifact.id;
+      }
+    }
+    if (Object.keys(newArtifacts).length === 0) return;
+    appStore.setState((prev) => ({
+      artifacts: { ...prev.artifacts, ...newArtifacts },
+      currentArtifactId: lastId ?? prev.currentArtifactId,
+      artifactsPanelOpen: true,
+    }));
+  }, [part.text, message.id]);
+
+  // Strip <artifact> tags from displayed text
+  const displayText = useMemo(
+    () =>
+      hasArtifactTags(part.text) ? stripArtifactTags(part.text) : part.text,
+    [part.text],
+  );
+
   const deleteMessage = useCallback(async () => {
     if (!setMessages) return;
     const ok = await notify.confirm({
@@ -373,7 +413,7 @@ export const AssistMessagePart = memo(function AssistMessagePart({
           "opacity-50 border border-destructive bg-card rounded-lg": isError,
         })}
       >
-        <Markdown>{part.text}</Markdown>
+        <Markdown>{displayText}</Markdown>
       </div>
       {showActions && (
         <div className="flex w-full">

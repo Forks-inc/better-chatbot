@@ -1520,3 +1520,56 @@
     @apply transition-colors duration-300;
   }
 }
+
+/* ── react-data-grid light theme ── */
+@import "react-data-grid/lib/styles.css";
+
+.rdg-light {
+  --rdg-color: oklch(0.141 0.005 285.823);
+  --rdg-border-color: oklch(0.92 0.004 286.32);
+  --rdg-summary-border-color: oklch(0.92 0.004 286.32);
+  --rdg-background-color: oklch(1 0 0);
+  --rdg-header-background-color: oklch(0.967 0.001 286.375);
+  --rdg-header-draggable-icon-color: oklch(0.552 0.016 285.938);
+  --rdg-row-hover-background-color: oklch(0.95 0.002 286);
+  --rdg-row-selected-background-color: color-mix(
+    in srgb,
+    oklch(0.21 0.006 285.885) 8%,
+    transparent
+  );
+  --rdg-row-selected-hover-background-color: color-mix(
+    in srgb,
+    oklch(0.21 0.006 285.885) 12%,
+    transparent
+  );
+  --rdg-checkbox-color: oklch(0.21 0.006 285.885);
+  --rdg-checkbox-focus-color: oklch(0.21 0.006 285.885);
+  --rdg-checkbox-disabled-border-color: oklch(0.92 0.004 286.32);
+  --rdg-checkbox-disabled-background-color: oklch(0.967 0.001 286.375);
+  font-size: 12px;
+}
+
+/* ── react-data-grid dark theme ── */
+.dark .rdg-light {
+  --rdg-color: oklch(0.985 0 0);
+  --rdg-border-color: oklch(0.32 0.008 286);
+  --rdg-summary-border-color: oklch(0.32 0.008 286);
+  --rdg-background-color: hsl(220 6% 9%);
+  --rdg-header-background-color: oklch(0.274 0.006 286.033);
+  --rdg-header-draggable-icon-color: oklch(0.552 0.016 285.938);
+  --rdg-row-hover-background-color: oklch(0.28 0.007 286);
+  --rdg-row-selected-background-color: color-mix(
+    in srgb,
+    oklch(0.92 0.004 286.32) 10%,
+    transparent
+  );
+  --rdg-row-selected-hover-background-color: color-mix(
+    in srgb,
+    oklch(0.92 0.004 286.32) 15%,
+    transparent
+  );
+  --rdg-checkbox-color: oklch(0.92 0.004 286.32);
+  --rdg-checkbox-focus-color: oklch(0.92 0.004 286.32);
+  --rdg-checkbox-disabled-border-color: oklch(0.32 0.008 286);
+  --rdg-checkbox-disabled-background-color: oklch(0.274 0.006 286.033);
+}

@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   SandpackProvider,
   SandpackPreview,
@@ -8,79 +7,61 @@ import {
   type SandpackProviderProps,
 } from "@codesandbox/sandpack-react";
 import type { Artifact } from "@/types/artifact";
-
-const templateMap: Record<string, SandpackPredefinedTemplate> = {
-  "application/vnd.react": "react-ts",
-  "application/vnd.ant.react": "react-ts",
-  "text/html": "static",
-  "application/vnd.code-html": "static",
-  default: "static",
-};
-
-const dependenciesMap: Record<string, Record<string, string>> = {
-  "application/vnd.react": {
-    "lucide-react": "^0.394.0",
-    recharts: "2.12.7",
-    "date-fns": "^3.3.1",
-    "class-variance-authority": "^0.6.0",
-    clsx: "^1.2.1",
-    "tailwind-merge": "^1.9.1",
-  },
-  "application/vnd.ant.react": {
-    "lucide-react": "^0.394.0",
-    recharts: "2.12.7",
-    "date-fns": "^3.3.1",
-    "class-variance-authority": "^0.6.0",
-    clsx: "^1.2.1",
-    "tailwind-merge": "^1.9.1",
-  },
-};
-
-function getFilename(type: string): string {
-  if (type.includes("react")) return "App.tsx";
-  return "index.html";
-}
+import { HtmlPreview } from "./html-preview";
+import { ReactIframePreview } from "./react-iframe-preview";
 
 interface Props {
   artifact: Artifact;
   currentCode?: string;
+  capturing?: boolean;
+  onCapture?: (data: { selectionImg: string; artifactImg: string }) => void;
+  onCaptureEnd?: () => void;
+  refreshKey?: number;
 }
 
-export function ArtifactPreview({ artifact, currentCode }: Props) {
-  const template = templateMap[artifact.type] ?? templateMap.default;
-  const filename = getFilename(artifact.type);
+export function ArtifactPreview({
+  artifact,
+  currentCode,
+  capturing,
+  onCapture,
+  onCaptureEnd,
+  refreshKey,
+}: Props) {
   const content = currentCode ?? artifact.content ?? "";
 
-  const files = useMemo(
-    () => ({
-      [filename]: content,
-    }),
-    [filename, content],
-  );
-
-  const customSetup: SandpackProviderProps["customSetup"] = useMemo(
-    () => ({
-      dependencies: dependenciesMap[artifact.type] ?? {},
-    }),
-    [artifact.type],
-  );
-
-  const options: SandpackProviderProps["options"] = useMemo(
-    () => ({
-      externalResources: ["https://cdn.tailwindcss.com/3.4.17"],
-    }),
-    [],
-  );
-
-  if (!artifact.content) {
+  // HTML → fast iframe with capture support
+  if (
+    artifact.type === "text/html" ||
+    artifact.type === "application/vnd.code-html"
+  ) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-        No content to preview
-      </div>
+      <HtmlPreview
+        key={refreshKey}
+        artifact={{ ...artifact, content }}
+        capturing={capturing}
+        onCapture={onCapture}
+        onCaptureEnd={onCaptureEnd}
+      />
     );
   }
 
-  // For non-previewable types, show a message
+  // React → lightweight iframe renderer (faster than Sandpack)
+  if (
+    artifact.type === "application/vnd.react" ||
+    artifact.type === "application/vnd.ant.react"
+  ) {
+    return (
+      <ReactIframePreview
+        key={refreshKey}
+        artifact={{ ...artifact, content }}
+        capturing={capturing}
+        onCapture={onCapture}
+        onCaptureEnd={onCaptureEnd}
+      />
+    );
+  }
+
+  // Non-previewable types
   if (
     artifact.type === "code" ||
     artifact.type === "text/plain" ||
@@ -94,6 +75,24 @@ export function ArtifactPreview({ artifact, currentCode }: Props) {
       </div>
     );
   }
+
+  if (!artifact.content) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+        No content to preview
+      </div>
+    );
+  }
+
+  // Fallback: Sandpack for any other type
+  const template: SandpackPredefinedTemplate = "static";
+  const files = { "index.html": content };
+  const customSetup: SandpackProviderProps["customSetup"] = {
+    dependencies: {},
+  };
+  const options: SandpackProviderProps["options"] = {
+    externalResources: ["https://cdn.tailwindcss.com/3.4.17"],
+  };
 
   return (
     <div className="h-full w-full overflow-hidden">
