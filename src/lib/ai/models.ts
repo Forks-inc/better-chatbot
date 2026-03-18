@@ -41,10 +41,15 @@ const staticModels = {
     "gpt-5.1-codex-mini": openai("gpt-5.1-codex-mini"),
   },
   google: {
-    "gemini-2.5-flash-lite": google("gemini-2.5-flash-lite"),
-    "gemini-2.5-flash": google("gemini-2.5-flash"),
-    "gemini-3-pro": google("gemini-3-pro-preview"),
+    "gemini-3.1-pro": google("gemini-3.1-pro-preview"),
+    "gemini-3-flash": google("gemini-3-flash-preview"),
+    "gemini-3.1-flash-lite": google("gemini-3.1-flash-lite-preview"),
     "gemini-2.5-pro": google("gemini-2.5-pro"),
+    "gemini-2.5-flash": google("gemini-2.5-flash"),
+    "gemini-2.0-pro": google("gemini-2.0-pro-exp-02-05"),
+    "gemini-2.0-flash": google("gemini-2.0-flash"),
+    "gemini-1.5-pro": google("gemini-1.5-pro"),
+    "gemini-1.5-flash": google("gemini-1.5-flash"),
   },
   anthropic: {
     "sonnet-4.5": anthropic("claude-sonnet-4-5"),
@@ -121,7 +126,19 @@ registerFileSupport(staticModels.openai["gpt-5-mini"], OPENAI_FILE_MIME_TYPES);
 registerFileSupport(staticModels.openai["gpt-5-nano"], OPENAI_FILE_MIME_TYPES);
 
 registerFileSupport(
-  staticModels.google["gemini-2.5-flash-lite"],
+  staticModels.google["gemini-3.1-pro"],
+  GEMINI_FILE_MIME_TYPES,
+);
+registerFileSupport(
+  staticModels.google["gemini-3-flash"],
+  GEMINI_FILE_MIME_TYPES,
+);
+registerFileSupport(
+  staticModels.google["gemini-3.1-flash-lite"],
+  GEMINI_FILE_MIME_TYPES,
+);
+registerFileSupport(
+  staticModels.google["gemini-2.5-pro"],
   GEMINI_FILE_MIME_TYPES,
 );
 registerFileSupport(
@@ -129,7 +146,19 @@ registerFileSupport(
   GEMINI_FILE_MIME_TYPES,
 );
 registerFileSupport(
-  staticModels.google["gemini-2.5-pro"],
+  staticModels.google["gemini-2.0-pro"],
+  GEMINI_FILE_MIME_TYPES,
+);
+registerFileSupport(
+  staticModels.google["gemini-2.0-flash"],
+  GEMINI_FILE_MIME_TYPES,
+);
+registerFileSupport(
+  staticModels.google["gemini-1.5-pro"],
+  GEMINI_FILE_MIME_TYPES,
+);
+registerFileSupport(
+  staticModels.google["gemini-1.5-flash"],
   GEMINI_FILE_MIME_TYPES,
 );
 
