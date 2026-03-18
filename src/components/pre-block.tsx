@@ -60,12 +60,14 @@ const PurePre = ({
     <pre className={cn("relative", className)}>
       <div className="p-1.5 border-b mb-4 z-20 bg-secondary">
         <div className="w-full flex z-20 py-0.5 px-4 items-center gap-2">
-          <span className="text-sm text-muted-foreground">{lang}</span>
+          <span className="text-xs font-mono text-foreground/50 uppercase tracking-wider">
+            {lang}
+          </span>
           <div className="ml-auto flex items-center gap-1">
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2 text-xs gap-1.5 text-muted-foreground hover:text-primary"
+              className="h-8 px-2 text-xs gap-1.5 text-foreground/70 hover:text-foreground"
               onClick={() => {
                 const typeMap: Record<string, ArtifactType> = {
                   tsx: "application/vnd.react",
@@ -174,7 +176,7 @@ export function PreBlock({ children }: { children: any }) {
         Highlight(
           code,
           language,
-          theme == "dark" ? "dark-plus" : "github-light",
+          theme == "dark" ? "github-dark" : "github-light",
         ),
       )
       .ifOk(setComponent)
@@ -186,7 +188,7 @@ export function PreBlock({ children }: { children: any }) {
     <div
       className={cn(
         loading && "animate-pulse",
-        "text-sm flex bg-secondary/40 shadow border flex-col rounded relative my-4 overflow-hidden",
+        "text-sm flex bg-[#0d1117] shadow-sm border flex-col rounded-lg relative my-4 overflow-hidden",
       )}
     >
       {component}
