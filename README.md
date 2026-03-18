@@ -25,7 +25,7 @@ You only need **one AI Provider API Key** (OpenAI, Claude, Gemini, etc.). Everyt
 
 ---
 
-**Better Chatbot** - A better open-source AI chatbot for individuals and teams, inspired by ChatGPT, Claude, Grok, and Gemini.
+**IAN** - A better open-source AI chatbot for individuals and teams, inspired by ChatGPT, Claude, Grok, and Gemini.
 
 • **Multi-AI Support** - Integrates all major LLMs: OpenAI, Anthropic, Google, xAI, Ollama, and more  
 • **Powerful Tools** - MCP protocol, web search, JS/Python code execution, data visualization  
