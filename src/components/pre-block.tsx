@@ -13,10 +13,13 @@ import { safe } from "ts-safe";
 import { cn } from "lib/utils";
 import { useTheme } from "next-themes";
 import { Button } from "ui/button";
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, PanelRight } from "lucide-react";
 import JsonView from "ui/json-view";
 import { useCopy } from "@/hooks/use-copy";
 import dynamic from "next/dynamic";
+import { appStore } from "@/app/store";
+import { generateUUID } from "lib/utils";
+import { ArtifactType } from "@/types/artifact";
 
 // Dynamically import MermaidDiagram component
 const MermaidDiagram = dynamic(
@@ -56,18 +59,55 @@ const PurePre = ({
   return (
     <pre className={cn("relative", className)}>
       <div className="p-1.5 border-b mb-4 z-20 bg-secondary">
-        <div className="w-full flex z-20 py-0.5 px-4 items-center">
+        <div className="w-full flex z-20 py-0.5 px-4 items-center gap-2">
           <span className="text-sm text-muted-foreground">{lang}</span>
-          <Button
-            size="icon"
-            variant={copied ? "secondary" : "ghost"}
-            className="ml-auto z-10 p-3! size-2! rounded-sm"
-            onClick={() => {
-              copy(code);
-            }}
-          >
-            {copied ? <CheckIcon /> : <CopyIcon className="size-3!" />}
-          </Button>
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-2 text-xs gap-1.5 text-muted-foreground hover:text-primary"
+              onClick={() => {
+                const typeMap: Record<string, ArtifactType> = {
+                  tsx: "application/vnd.react",
+                  jsx: "application/vnd.react",
+                  html: "text/html",
+                  mermaid: "application/vnd.mermaid",
+                  markdown: "text/markdown",
+                  md: "text/markdown",
+                };
+                const type = typeMap[lang.toLowerCase()] || "code";
+                appStore.setState((prev) => ({
+                  artifacts: {
+                    ...prev.artifacts,
+                    [generateUUID()]: {
+                      id: generateUUID(),
+                      title: `Code (${lang})`,
+                      content: code,
+                      type,
+                      language: lang,
+                      messageId: "manual",
+                      lastUpdateTime: Date.now(),
+                    },
+                  },
+                  currentArtifactId: generateUUID(),
+                  artifactsPanelOpen: true,
+                }));
+              }}
+            >
+              <PanelRight className="size-3.5" />
+              Canvas
+            </Button>
+            <Button
+              size="icon"
+              variant={copied ? "secondary" : "ghost"}
+              className="z-10 p-3! size-2! rounded-sm"
+              onClick={() => {
+                copy(code);
+              }}
+            >
+              {copied ? <CheckIcon /> : <CopyIcon className="size-3!" />}
+            </Button>
+          </div>
         </div>
       </div>
 

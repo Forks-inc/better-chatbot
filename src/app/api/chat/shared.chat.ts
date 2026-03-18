@@ -493,10 +493,10 @@ export const convertToSavePart = <T extends UIMessagePart<any, any>>(
 };
 
 export function truncateMessages(messages: UIMessage[]): UIMessage[] {
-  const MAX_TEXT_LENGTH = 30000; // ~7.5k tokens
-  const MAX_TOOL_RESULT_LENGTH = 50000; // ~12.5k tokens
-  const MAX_TOTAL_MESSAGES = 40; // Only keep last 40 messages
-  const MAX_TOTAL_CHARS = 200000; // Total history chars limit (~50k tokens)
+  const MAX_TEXT_LENGTH = 100000; // ~25k tokens
+  const MAX_TOOL_RESULT_LENGTH = 250000; // ~60k tokens
+  const MAX_TOTAL_MESSAGES = 100; // Keep more history
+  const MAX_TOTAL_CHARS = 1500000; // ~375k tokens total history limit
 
   // 1. Prune messages count (keep first and last N)
   let processedMessages = messages;
@@ -533,12 +533,9 @@ export function truncateMessages(messages: UIMessage[]): UIMessage[] {
         if (resultStr.length > MAX_TOOL_RESULT_LENGTH) {
           return {
             ...part,
-            result: {
-              _truncated: true,
-              data:
-                resultStr.slice(0, MAX_TOOL_RESULT_LENGTH) +
-                "\n\n[... Resultado truncado ...]",
-            },
+            result:
+              resultStr.slice(0, MAX_TOOL_RESULT_LENGTH) +
+              "\n\n[... Resultado truncado por longitud. Si necesitas ver el resto, por favor pide un rango específico o filtrado. ...]",
           };
         }
       }

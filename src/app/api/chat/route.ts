@@ -318,7 +318,7 @@ export async function POST(request: Request) {
 
         const result = streamText({
           model,
-          system: truncateString(systemPrompt, 50000),
+          system: truncateString(systemPrompt, 100000),
           messages: convertToModelMessages(truncateMessages(messages)),
           experimental_transform: smoothStream({ chunking: "word" }),
           maxRetries: 2,

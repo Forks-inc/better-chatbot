@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { appStore } from "@/app/store";
 import { useShallow } from "zustand/shallow";
 import type { Artifact, ArtifactType } from "@/types/artifact";
-import { generateUUID } from "lib/utils";
 
 interface ArtifactMeta {
   id: string;
@@ -39,6 +38,8 @@ function languageToType(lang: string): ArtifactType {
     case "markdown":
     case "md":
       return "text/markdown";
+    case "json":
+      return "code";
     default:
       return "code";
   }
@@ -47,6 +48,8 @@ function languageToType(lang: string): ArtifactType {
 /**
  * Extracts artifacts from the assistant's latest message text.
  * Supports both `:::artifact{...}:::` blocks and large code blocks.
+ * IMPORTANT: Uses deterministic IDs for code blocks (messageId-based)
+ * to prevent infinite re-creation on every render.
  */
 function extractArtifacts(text: string, messageId: string): Artifact[] {
   const artifacts: Artifact[] = [];
@@ -61,7 +64,7 @@ function extractArtifacts(text: string, messageId: string): Artifact[] {
     // Strip surrounding code fences if present
     const codeMatch = content.match(/^```\w*\n([\s\S]*?)```$/);
     const finalContent = codeMatch ? codeMatch[1] : content;
-    const id = meta.id || generateUUID();
+    const id = meta.id || `${messageId}-artifact-${artifacts.length}`;
     if (!seen.has(id)) {
       seen.add(id);
       artifacts.push({
@@ -76,20 +79,31 @@ function extractArtifacts(text: string, messageId: string): Artifact[] {
     }
   }
 
-  // 2. Large code blocks (>10 lines, React/HTML/etc.)
+  // 2. Large code blocks (>=5 lines, React/HTML/etc.)
   if (artifacts.length === 0) {
     const codeRegex = new RegExp(CODE_BLOCK_REGEX.source, "gm");
+    let codeBlockIndex = 0;
     while ((match = codeRegex.exec(text)) !== null) {
       const lang = match[1];
       const content = match[2];
       const lines = content.split("\n").length;
       if (
-        lines >= 10 &&
-        ["tsx", "jsx", "html", "react", "typescript", "javascript"].includes(
-          lang.toLowerCase(),
-        )
+        lines >= 5 &&
+        [
+          "tsx",
+          "jsx",
+          "html",
+          "react",
+          "typescript",
+          "javascript",
+          "json",
+          "python",
+          "css",
+          "sql",
+        ].includes(lang.toLowerCase())
       ) {
-        const id = generateUUID();
+        const id = `${messageId}-codeblock-${codeBlockIndex}`;
+        codeBlockIndex++;
         artifacts.push({
           id,
           title: `Code (${lang})`,
@@ -110,16 +124,14 @@ export function useArtifacts(
   messages: { id: string; role: string; parts: any[] }[],
   isSubmitting: boolean,
 ) {
-  const [mutate, artifacts, currentArtifactId, panelOpen] = appStore(
-    useShallow((s) => [
-      s.mutate,
-      s.artifacts,
-      s.currentArtifactId,
-      s.artifactsPanelOpen,
-    ]),
+  const [mutate, artifacts, currentArtifactId] = appStore(
+    useShallow((s) => [s.mutate, s.artifacts, s.currentArtifactId]),
   );
 
   const prevMessageCountRef = useRef(0);
+  // Track the message ID for which we already auto-opened the panel.
+  // Once auto-opened for a message, we never force it open again for that same message.
+  const autoOpenedMessageIdRef = useRef<string | null>(null);
 
   // Extract artifacts from the latest assistant message
   useEffect(() => {
@@ -149,17 +161,30 @@ export function useArtifacts(
 
     if (hasNew) {
       const latestId = extracted[extracted.length - 1].id;
-      mutate((prev) => ({
-        artifacts: { ...prev.artifacts, ...newArtifacts },
-        currentArtifactId: latestId,
-        artifactsPanelOpen: true,
-      }));
+      const isNewMessage = lastMessage.id !== autoOpenedMessageIdRef.current;
+
+      if (isNewMessage) {
+        // First time seeing this message → auto-open the panel
+        autoOpenedMessageIdRef.current = lastMessage.id;
+        mutate((prev) => ({
+          artifacts: { ...prev.artifacts, ...newArtifacts },
+          currentArtifactId: latestId,
+          artifactsPanelOpen: true,
+        }));
+      } else {
+        // Same message, just content update → preserve user's panel choice
+        mutate((prev) => ({
+          artifacts: { ...prev.artifacts, ...newArtifacts },
+          currentArtifactId: latestId,
+        }));
+      }
     }
   }, [messages, isSubmitting]);
 
   // Reset artifacts when conversation changes
   useEffect(() => {
     if (messages.length === 0 && prevMessageCountRef.current > 0) {
+      autoOpenedMessageIdRef.current = null;
       mutate({
         artifacts: {},
         currentArtifactId: null,
@@ -168,6 +193,8 @@ export function useArtifacts(
     }
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
+
+  const panelOpen = appStore((s) => s.artifactsPanelOpen);
 
   const currentArtifact = currentArtifactId
     ? artifacts[currentArtifactId]
@@ -185,6 +212,7 @@ export function useArtifacts(
 
   const setCurrentArtifactId = useCallback(
     (id: string) => {
+      autoOpenedMessageIdRef.current = null; // allow re-open
       mutate({ currentArtifactId: id, artifactsPanelOpen: true });
     },
     [mutate],

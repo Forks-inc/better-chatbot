@@ -172,7 +172,7 @@ export function ArtifactPanel({
       </div>
 
       {/* Content */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden flex flex-col">
         {activeTab === "code" ? (
           <ArtifactCodeEditor
             artifact={artifact}

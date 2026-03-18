@@ -96,18 +96,21 @@ export function ArtifactPreview({ artifact, currentCode }: Props) {
   }
 
   return (
-    <SandpackProvider
-      template={template}
-      files={files}
-      customSetup={customSetup}
-      options={options}
-      theme="dark"
-    >
-      <SandpackPreview
-        showOpenInCodeSandbox={false}
-        showRefreshButton={false}
+    <div className="h-full w-full overflow-hidden">
+      <SandpackProvider
+        template={template}
+        files={files}
+        customSetup={customSetup}
+        options={options}
+        theme="dark"
         style={{ height: "100%", width: "100%" }}
-      />
-    </SandpackProvider>
+      >
+        <SandpackPreview
+          showOpenInCodeSandbox={false}
+          showRefreshButton={false}
+          style={{ height: "100%", width: "100%" }}
+        />
+      </SandpackProvider>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ import { ChevronDown, ChevronUp, TriangleAlertIcon } from "lucide-react";
 import { Button } from "ui/button";
 import { useTranslations } from "next-intl";
 import { ChatMetadata } from "app-types/chat";
+import { appStore } from "@/app/store";
 
 interface Props {
   message: UIMessage;
@@ -57,13 +58,20 @@ const PurePreviewMessage = ({
     [message.parts],
   );
 
+  const artifactsPanelOpen = appStore((s) => s.artifactsPanelOpen);
+
   if (message.role == "system") {
     return null; // system message is not shown
   }
   if (!partsForDisplay.length) return null;
 
   return (
-    <div className="w-full mx-auto max-w-3xl px-6 group/message">
+    <div
+      className={cn(
+        "w-full mx-auto px-6 group/message",
+        artifactsPanelOpen ? "max-w-full" : "max-w-3xl",
+      )}
+    >
       <div
         className={cn(
           "flex gap-4 w-full group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl",

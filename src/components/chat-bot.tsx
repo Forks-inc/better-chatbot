@@ -31,7 +31,7 @@ import { isShortcutEvent, Shortcuts } from "lib/keyboard-shortcuts";
 import { Button } from "ui/button";
 import { deleteThreadAction } from "@/app/api/chat/actions";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Loader, FilePlus } from "lucide-react";
+import { ArrowDown, Loader, FilePlus, PanelRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -96,6 +96,8 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
     threadMentions,
     pendingThreadMention,
     threadImageToolModel,
+    artifacts,
+    artifactsPanelOpen,
   ] = appStore(
     useShallow((state) => [
       state.mutate,
@@ -107,6 +109,8 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
       state.threadMentions,
       state.pendingThreadMention,
       state.threadImageToolModel,
+      state.artifacts,
+      state.artifactsPanelOpen,
     ]),
   );
 
@@ -432,6 +436,25 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
           <ChatGreeting />
         ) : (
           <>
+            <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+              {Object.keys(artifacts).length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    "h-9 w-9 p-0 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm transition-all",
+                    artifactsPanelOpen &&
+                      "bg-primary text-primary-foreground border-primary",
+                  )}
+                  onClick={() =>
+                    appStoreMutate({ artifactsPanelOpen: !artifactsPanelOpen })
+                  }
+                  title="Toggle Canvas"
+                >
+                  <PanelRight className="size-4" />
+                </Button>
+              )}
+            </div>
             <div
               className={
                 "flex flex-col gap-2 overflow-y-auto py-6 z-10 [scrollbar-gutter:stable_both-edges]"
@@ -467,7 +490,12 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
               })}
               {space && (
                 <>
-                  <div className="w-full mx-auto max-w-3xl px-6 relative">
+                  <div
+                    className={cn(
+                      "w-full mx-auto relative px-6",
+                      artifactsPanelOpen ? "max-w-full" : "max-w-3xl",
+                    )}
+                  >
                     <div className={space == "space" ? "opacity-0" : ""}>
                       <Think />
                     </div>

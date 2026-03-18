@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { useShallow } from "zustand/shallow";
 import { appStore } from "@/app/store";
 import { ArtifactPanel } from "@/components/artifacts/artifact-panel";
@@ -44,9 +45,9 @@ export function ChatCanvasLayout({ children }: Props) {
     }
   };
 
-  const handleClose = () => {
-    mutate({ artifactsPanelOpen: false });
-  };
+  const handleClose = useCallback(() => {
+    appStore.getState().mutate({ artifactsPanelOpen: false });
+  }, []);
 
   if (!panelOpen || !currentArtifact) {
     return <>{children}</>;
