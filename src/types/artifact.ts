@@ -16,7 +16,10 @@ export type ArtifactType =
   | "application/vnd.mermaid"
   | "text/markdown"
   | "text/plain"
-  | "code";
+  | "code"
+  | "application/vnd.presentation"
+  | "application/vnd.spreadsheet"
+  | "application/vnd.python";
 
 export type ArtifactFiles =
   | {

@@ -37,6 +37,9 @@ const TYPE_MAP: Record<string, string> = {
   "text/markdown": "markdown",
   "text/plain": "plaintext",
   "application/vnd.mermaid": "markdown",
+  "application/vnd.presentation": "json",
+  "application/vnd.spreadsheet": "json",
+  "application/vnd.python": "python",
   code: "plaintext",
 };
 

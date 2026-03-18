@@ -14,6 +14,10 @@ function validateCodeSafety(code: string): string | null {
   return null;
 }
 
+async function ensureMicropip(pyodide: any): Promise<void> {
+  await pyodide.loadPackage("micropip");
+}
+
 // Output handlers from reference
 export const OUTPUT_HANDLERS = {
   matplotlib: `
@@ -105,6 +109,15 @@ function detectRequiredHandlers(code: string): string[] {
   return handlers;
 }
 
+function detectNeedsMicropip(code: string): boolean {
+  return (
+    code.includes("micropip") ||
+    code.includes("python-pptx") ||
+    code.includes("openpyxl") ||
+    code.includes("micropip.install")
+  );
+}
+
 export async function safePythonRun({
   code,
   timeout = 30000,
@@ -130,7 +143,9 @@ export async function safePythonRun({
       batched: (output: string) => {
         const type = output.startsWith("data:image/png;base64")
           ? "image"
-          : "data";
+          : output.startsWith("data:application/")
+            ? "download"
+            : "data";
         logs.push({ type: "log", args: [{ type, value: output }] });
         onLog?.({ type: "log", args: [{ type, value: output }] });
       },
@@ -141,6 +156,11 @@ export async function safePythonRun({
         onLog?.({ type: "error", args: [{ type: "data", value: output }] });
       },
     });
+
+    // Load micropip if needed (before loadPackagesFromImports)
+    if (detectNeedsMicropip(code)) {
+      await ensureMicropip(pyodide);
+    }
 
     // Load packages and handlers
     await pyodide.loadPackagesFromImports(code);

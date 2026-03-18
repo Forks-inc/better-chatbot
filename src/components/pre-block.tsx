@@ -13,7 +13,7 @@ import { safe } from "ts-safe";
 import { cn } from "lib/utils";
 import { useTheme } from "next-themes";
 import { Button } from "ui/button";
-import { CheckIcon, CopyIcon, PanelRight } from "lucide-react";
+import { CheckIcon, CopyIcon, PanelRight, Play } from "lucide-react";
 import JsonView from "ui/json-view";
 import { useCopy } from "@/hooks/use-copy";
 import dynamic from "next/dynamic";
@@ -21,12 +21,11 @@ import { appStore } from "@/app/store";
 import { generateUUID } from "lib/utils";
 import { ArtifactType } from "@/types/artifact";
 
-// Dynamically import MermaidDiagram component
 const MermaidDiagram = dynamic(
   () => import("./mermaid-diagram").then((mod) => mod.MermaidDiagram),
   {
     loading: () => (
-      <div className="text-sm flex bg-accent/30 flex-col rounded-2xl relative my-4 overflow-hidden border">
+      <div className="text-sm flex bg-code-bg flex-col rounded-2xl relative my-4 overflow-hidden border">
         <div className="w-full flex z-20 py-2 px-4 items-center">
           <span className="text-sm text-muted-foreground">mermaid</span>
         </div>
@@ -43,6 +42,28 @@ const MermaidDiagram = dynamic(
   },
 );
 
+const RUNNABLE_LANGS = new Set([
+  "python",
+  "javascript",
+  "js",
+  "typescript",
+  "ts",
+]);
+
+const CANVAS_TYPE_MAP: Record<string, ArtifactType> = {
+  tsx: "application/vnd.react",
+  jsx: "application/vnd.react",
+  html: "text/html",
+  mermaid: "application/vnd.mermaid",
+  markdown: "text/markdown",
+  md: "text/markdown",
+  python: "application/vnd.python",
+  js: "code",
+  javascript: "code",
+  ts: "code",
+  typescript: "code",
+};
+
 const PurePre = ({
   children,
   className,
@@ -55,66 +76,100 @@ const PurePre = ({
   lang: string;
 }) => {
   const { copied, copy } = useCopy();
+  const lineCount = code.split("\n").length;
+  const isRunnable = RUNNABLE_LANGS.has(lang.toLowerCase());
+
+  const handleSendToCanvas = () => {
+    const type = CANVAS_TYPE_MAP[lang.toLowerCase()] ?? "code";
+    const artifactId = generateUUID();
+    appStore.setState((prev) => ({
+      artifacts: {
+        ...prev.artifacts,
+        [artifactId]: {
+          id: artifactId,
+          title: `Code (${lang})`,
+          content: code,
+          type,
+          language: lang,
+          messageId: "manual",
+          lastUpdateTime: Date.now(),
+        },
+      },
+      currentArtifactId: artifactId,
+      artifactsPanelOpen: true,
+    }));
+  };
+
+  const handleRun = () => {
+    const runType = ["python"].includes(lang.toLowerCase())
+      ? "application/vnd.python"
+      : "code";
+    const artifactId = generateUUID();
+    appStore.setState((prev) => ({
+      artifacts: {
+        ...prev.artifacts,
+        [artifactId]: {
+          id: artifactId,
+          title: `Run: ${lang}`,
+          content: code,
+          type: runType,
+          language: lang,
+          messageId: "manual",
+          lastUpdateTime: Date.now(),
+        },
+      },
+      currentArtifactId: artifactId,
+      artifactsPanelOpen: true,
+    }));
+  };
 
   return (
     <pre className={cn("relative", className)}>
-      <div className="p-1.5 border-b mb-4 z-20 bg-secondary">
-        <div className="w-full flex z-20 py-0.5 px-4 items-center gap-2">
-          <span className="text-xs font-mono text-foreground/50 uppercase tracking-wider">
-            {lang}
-          </span>
-          <div className="ml-auto flex items-center gap-1">
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b bg-black/10 dark:bg-white/5">
+        <span className="text-xs font-mono text-foreground/50 uppercase tracking-wider">
+          {lang}
+        </span>
+        <span className="text-xs text-muted-foreground/40">
+          {lineCount} {lineCount === 1 ? "line" : "lines"}
+        </span>
+        <div className="ml-auto flex items-center gap-1">
+          {isRunnable && (
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2 text-xs gap-1.5 text-foreground/70 hover:text-foreground"
-              onClick={() => {
-                const typeMap: Record<string, ArtifactType> = {
-                  tsx: "application/vnd.react",
-                  jsx: "application/vnd.react",
-                  html: "text/html",
-                  mermaid: "application/vnd.mermaid",
-                  markdown: "text/markdown",
-                  md: "text/markdown",
-                };
-                const type = typeMap[lang.toLowerCase()] || "code";
-                const artifactId = generateUUID();
-                appStore.setState((prev) => ({
-                  artifacts: {
-                    ...prev.artifacts,
-                    [artifactId]: {
-                      id: artifactId,
-                      title: `Code (${lang})`,
-                      content: code,
-                      type,
-                      language: lang,
-                      messageId: "manual",
-                      lastUpdateTime: Date.now(),
-                    },
-                  },
-                  currentArtifactId: artifactId,
-                  artifactsPanelOpen: true,
-                }));
-              }}
+              className="h-7 px-2 text-xs gap-1.5 text-foreground/60 hover:text-foreground"
+              onClick={handleRun}
             >
-              <PanelRight className="size-3.5" />
-              Canvas
+              <Play className="size-3" />
+              Run
             </Button>
-            <Button
-              size="icon"
-              variant={copied ? "secondary" : "ghost"}
-              className="z-10 p-3! size-2! rounded-sm"
-              onClick={() => {
-                copy(code);
-              }}
-            >
-              {copied ? <CheckIcon /> : <CopyIcon className="size-3!" />}
-            </Button>
-          </div>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs gap-1.5 text-foreground/60 hover:text-foreground"
+            onClick={handleSendToCanvas}
+          >
+            <PanelRight className="size-3.5" />
+            Canvas
+          </Button>
+          <Button
+            size="icon"
+            variant={copied ? "secondary" : "ghost"}
+            className="size-7 rounded-sm"
+            onClick={() => copy(code)}
+          >
+            {copied ? (
+              <CheckIcon className="size-3.5" />
+            ) : (
+              <CopyIcon className="size-3.5" />
+            )}
+          </Button>
         </div>
       </div>
 
-      <div className="relative overflow-x-auto px-6 pb-6">{children}</div>
+      <div className="relative overflow-x-auto px-6 pb-6 pt-4">{children}</div>
     </pre>
   );
 };
@@ -183,12 +238,11 @@ export function PreBlock({ children }: { children: any }) {
       .watch(() => setLoading(false));
   }, [theme, language, code]);
 
-  // For other code blocks, render as before
   return (
     <div
       className={cn(
         loading && "animate-pulse",
-        "text-sm flex bg-[#0d1117] shadow-sm border flex-col rounded-lg relative my-4 overflow-hidden",
+        "text-sm flex bg-code-bg shadow-sm border flex-col rounded-lg relative my-4 overflow-hidden",
       )}
     >
       {component}

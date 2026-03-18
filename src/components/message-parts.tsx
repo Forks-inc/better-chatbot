@@ -59,6 +59,7 @@ import {
 } from "lib/keyboard-shortcuts";
 
 import { WorkflowInvocation } from "./tool-invocation/workflow-invocation";
+import { DocumentCreatorInvocation } from "./tool-invocation/document-creator";
 import dynamic from "next/dynamic";
 import { notify } from "lib/notify";
 import { ModelProviderIcon } from "ui/model-provider-icon";
@@ -898,6 +899,26 @@ export const ToolMessagePart = memo(
             key={part.toolCallId}
             onResult={onToolCallDirect}
             type="python"
+          />
+        );
+      }
+
+      if (toolName === DefaultToolName.CreatePresentation) {
+        return (
+          <DocumentCreatorInvocation
+            key={part.toolCallId}
+            part={part}
+            docType="presentation"
+          />
+        );
+      }
+
+      if (toolName === DefaultToolName.CreateSpreadsheet) {
+        return (
+          <DocumentCreatorInvocation
+            key={part.toolCallId}
+            part={part}
+            docType="spreadsheet"
           />
         );
       }

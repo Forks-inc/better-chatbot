@@ -3,6 +3,7 @@
 /* Individual theme variants - themes from  https://github.com/rawestmoreland/theme-generator/blob/main/src/app/globals.css */
 
 @theme inline {
+  --color-code-bg: var(--code-bg);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -45,6 +46,7 @@
 
 :root {
   --radius: 0.75rem;
+  --code-bg: #f6f8fa;
   --background: oklch(1 0 0);
   --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
@@ -764,6 +766,7 @@
 }
 
 .dark {
+  --code-bg: #0d1117;
   --background: hsl(220 6% 9%);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.21 0.006 285.885);
