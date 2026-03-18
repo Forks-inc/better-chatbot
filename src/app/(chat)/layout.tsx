@@ -39,7 +39,9 @@ export default async function ChatLayout({
         <main className="relative bg-background w-full flex flex-col h-screen">
           <AppHeader />
           <ChatCanvasLayout>
-            <div className="flex-1 overflow-y-auto h-full">{children}</div>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden h-full">
+              {children}
+            </div>
           </ChatCanvasLayout>
         </main>
       </SWRConfigProvider>

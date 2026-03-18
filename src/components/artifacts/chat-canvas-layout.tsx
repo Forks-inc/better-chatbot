@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { appStore } from "@/app/store";
 import { ArtifactPanel } from "@/components/artifacts/artifact-panel";
@@ -23,6 +23,15 @@ export function ChatCanvasLayout({ children }: Props) {
       s.mutate,
     ]),
   );
+
+  // Detect if viewport is small (mobile/tablet)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const currentArtifact = currentArtifactId
     ? artifacts[currentArtifactId]
@@ -53,6 +62,27 @@ export function ChatCanvasLayout({ children }: Props) {
     return <>{children}</>;
   }
 
+  const panel = (
+    <ArtifactPanel
+      artifact={currentArtifact}
+      currentIndex={currentIndex}
+      totalVersions={orderedArtifactIds.length}
+      onVersionChange={handleVersionChange}
+      onClose={handleClose}
+    />
+  );
+
+  // Mobile: overlay the panel full-screen on top of the chat
+  if (isMobile) {
+    return (
+      <>
+        {children}
+        <div className="fixed inset-0 z-50 bg-background">{panel}</div>
+      </>
+    );
+  }
+
+  // Desktop: side-by-side resizable panels
   return (
     <ResizablePanelGroup direction="horizontal" className="h-full">
       <ResizablePanel defaultSize={50} minSize={30}>
@@ -60,13 +90,7 @@ export function ChatCanvasLayout({ children }: Props) {
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel defaultSize={50} minSize={25}>
-        <ArtifactPanel
-          artifact={currentArtifact}
-          currentIndex={currentIndex}
-          totalVersions={orderedArtifactIds.length}
-          onVersionChange={handleVersionChange}
-          onClose={handleClose}
-        />
+        {panel}
       </ResizablePanel>
     </ResizablePanelGroup>
   );

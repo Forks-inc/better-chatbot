@@ -28,8 +28,9 @@ function parseArtifactMeta(attrs: string): Partial<ArtifactMeta> {
 
 function languageToType(lang: string): ArtifactType {
   switch (lang.toLowerCase()) {
-    case "tsx":
-    case "jsx":
+    case "typescript":
+    case "javascript":
+    case "react":
       return "application/vnd.react";
     case "html":
       return "text/html";
@@ -129,53 +130,52 @@ export function useArtifacts(
   );
 
   const prevMessageCountRef = useRef(0);
-  // Track the message ID for which we already auto-opened the panel.
-  // Once auto-opened for a message, we never force it open again for that same message.
-  const autoOpenedMessageIdRef = useRef<string | null>(null);
+  // Track which artifacts we already auto-opened the panel for.
+  const autoOpenedArtifactIdsRef = useRef<Set<string>>(new Set());
 
-  // Extract artifacts from the latest assistant message
+  // Extract artifacts from ALL assistant messages
   useEffect(() => {
-    const lastMessage = messages.at(-1);
-    if (!lastMessage || lastMessage.role !== "assistant") return;
-
-    const text = lastMessage.parts
-      .filter((p: any) => p.type === "text")
-      .map((p: any) => p.text)
-      .join("\n");
-
-    if (!text) return;
-
-    const extracted = extractArtifacts(text, lastMessage.id);
-    if (extracted.length === 0) return;
-
-    const newArtifacts: Record<string, Artifact> = {};
+    const allNewArtifacts: Record<string, Artifact> = {};
     let hasNew = false;
+    let latestId: string | null = null;
 
-    for (const artifact of extracted) {
-      const existing = artifacts[artifact.id];
-      if (!existing || existing.content !== artifact.content) {
-        newArtifacts[artifact.id] = artifact;
-        hasNew = true;
+    for (const message of messages) {
+      if (message.role !== "assistant") continue;
+
+      const text = message.parts
+        .filter((p: any) => p.type === "text")
+        .map((p: any) => p.text)
+        .join("\n");
+
+      if (!text) continue;
+
+      const extracted = extractArtifacts(text, message.id);
+      for (const artifact of extracted) {
+        const existing = artifacts[artifact.id];
+        if (!existing || existing.content !== artifact.content) {
+          allNewArtifacts[artifact.id] = artifact;
+          hasNew = true;
+        }
+        latestId = artifact.id;
       }
     }
 
-    if (hasNew) {
-      const latestId = extracted[extracted.length - 1].id;
-      const isNewMessage = lastMessage.id !== autoOpenedMessageIdRef.current;
+    if (hasNew && latestId) {
+      const isNewArtifact = !autoOpenedArtifactIdsRef.current.has(latestId);
 
-      if (isNewMessage) {
-        // First time seeing this message → auto-open the panel
-        autoOpenedMessageIdRef.current = lastMessage.id;
+      if (isNewArtifact) {
+        // First time seeing this artifact → auto-open
+        autoOpenedArtifactIdsRef.current.add(latestId);
         mutate((prev) => ({
-          artifacts: { ...prev.artifacts, ...newArtifacts },
+          artifacts: { ...prev.artifacts, ...allNewArtifacts },
           currentArtifactId: latestId,
           artifactsPanelOpen: true,
         }));
       } else {
-        // Same message, just content update → preserve user's panel choice
+        // Existing artifact update → preserve user's panel choice
         mutate((prev) => ({
-          artifacts: { ...prev.artifacts, ...newArtifacts },
-          currentArtifactId: latestId,
+          artifacts: { ...prev.artifacts, ...allNewArtifacts },
+          currentArtifactId: prev.currentArtifactId || latestId,
         }));
       }
     }
@@ -184,7 +184,7 @@ export function useArtifacts(
   // Reset artifacts when conversation changes
   useEffect(() => {
     if (messages.length === 0 && prevMessageCountRef.current > 0) {
-      autoOpenedMessageIdRef.current = null;
+      autoOpenedArtifactIdsRef.current.clear();
       mutate({
         artifacts: {},
         currentArtifactId: null,
@@ -212,7 +212,7 @@ export function useArtifacts(
 
   const setCurrentArtifactId = useCallback(
     (id: string) => {
-      autoOpenedMessageIdRef.current = null; // allow re-open
+      autoOpenedArtifactIdsRef.current.add(id); // mark as auto-opened since user clicked it
       mutate({ currentArtifactId: id, artifactsPanelOpen: true });
     },
     [mutate],

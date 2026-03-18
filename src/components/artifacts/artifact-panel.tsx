@@ -36,7 +36,10 @@ export function ArtifactPanel({
   onClose,
   isStreaming = false,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<"code" | "preview">("preview");
+  const isReact = artifact?.type?.includes("react");
+  const [activeTab, setActiveTab] = useState<"code" | "preview">(
+    isReact ? "preview" : "code",
+  );
   const [currentCode, setCurrentCode] = useState<string | undefined>();
   const { copied, copy } = useCopy();
 

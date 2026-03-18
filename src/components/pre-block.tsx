@@ -76,11 +76,12 @@ const PurePre = ({
                   md: "text/markdown",
                 };
                 const type = typeMap[lang.toLowerCase()] || "code";
+                const artifactId = generateUUID();
                 appStore.setState((prev) => ({
                   artifacts: {
                     ...prev.artifacts,
-                    [generateUUID()]: {
-                      id: generateUUID(),
+                    [artifactId]: {
+                      id: artifactId,
                       title: `Code (${lang})`,
                       content: code,
                       type,
@@ -89,7 +90,7 @@ const PurePre = ({
                       lastUpdateTime: Date.now(),
                     },
                   },
-                  currentArtifactId: generateUUID(),
+                  currentArtifactId: artifactId,
                   artifactsPanelOpen: true,
                 }));
               }}

@@ -18,6 +18,7 @@ import {
   buildUserSystemPrompt,
   buildToolCallUnsupportedModelSystemPrompt,
 } from "lib/ai/prompts";
+import { CLAUDE_SYSTEM_PROMPT } from "lib/ai/claude-prompts";
 import {
   chatApiSchemaRequestBodySchema,
   ChatMention,
@@ -266,6 +267,7 @@ export async function POST(request: Request) {
         const systemPrompt = mergeSystemPrompt(
           buildUserSystemPrompt(session.user, userPreferences, agent),
           buildMcpServerCustomizationsSystemPrompt(mcpServerCustomizations),
+          CLAUDE_SYSTEM_PROMPT,
           !supportToolCall && buildToolCallUnsupportedModelSystemPrompt,
         );
 
