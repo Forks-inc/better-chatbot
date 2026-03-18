@@ -7,6 +7,7 @@ import { WorkflowSummary } from "app-types/workflow";
 import { AppDefaultToolkit } from "lib/ai/tools";
 import { AgentSummary } from "app-types/agent";
 import { ArchiveWithItemCount } from "app-types/archive";
+import type { Artifact } from "@/types/artifact";
 
 export interface UploadedFile {
   id: string;
@@ -65,6 +66,10 @@ export interface AppState {
     };
   };
   pendingThreadMention?: ChatMention;
+  // Canvas/Artifacts
+  artifacts: Record<string, Artifact | undefined>;
+  currentArtifactId: string | null;
+  artifactsPanelOpen: boolean;
 }
 
 export interface AppDispatch {
@@ -108,6 +113,10 @@ const initialState: AppState = {
     },
   },
   pendingThreadMention: undefined,
+  // Canvas/Artifacts
+  artifacts: {},
+  currentArtifactId: null,
+  artifactsPanelOpen: false,
 };
 
 export const appStore = create<AppState & AppDispatch>()(

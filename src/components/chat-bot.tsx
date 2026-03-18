@@ -49,6 +49,7 @@ import { getStorageManager } from "lib/browser-stroage";
 import { AnimatePresence, motion } from "framer-motion";
 import { useThreadFileUploader } from "@/hooks/use-thread-file-uploader";
 import { useFileDragOverlay } from "@/hooks/use-file-drag-overlay";
+import { useArtifacts } from "@/hooks/use-artifacts";
 
 type Props = {
   threadId: string;
@@ -250,6 +251,9 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
     () => status === "streaming" || status === "submitted",
     [status],
   );
+
+  // Canvas: detect artifacts in messages
+  useArtifacts(messages, isLoading);
 
   const emptyMessage = useMemo(
     () => messages.length === 0 && !error,

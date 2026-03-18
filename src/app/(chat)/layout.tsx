@@ -9,6 +9,7 @@ import { AppPopupProvider } from "@/components/layouts/app-popup-provider";
 import { SWRConfigProvider } from "./swr-config";
 import { UserDetailContent } from "@/components/user/user-detail/user-detail-content";
 import { UserDetailContentSkeleton } from "@/components/user/user-detail/user-detail-content-skeleton";
+import { ChatCanvasLayout } from "@/components/artifacts/chat-canvas-layout";
 
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -35,9 +36,11 @@ export default async function ChatLayout({
           }
         />
         <AppSidebar user={session.user} />
-        <main className="relative bg-background  w-full flex flex-col h-screen">
+        <main className="relative bg-background w-full flex flex-col h-screen">
           <AppHeader />
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          <ChatCanvasLayout>
+            <div className="flex-1 overflow-y-auto h-full">{children}</div>
+          </ChatCanvasLayout>
         </main>
       </SWRConfigProvider>
     </SidebarProvider>
