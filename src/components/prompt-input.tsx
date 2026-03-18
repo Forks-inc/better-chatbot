@@ -128,8 +128,6 @@ export default function PromptInput({
   }, [providers, globalModel]);
 
   const supportedFileMimeTypes = modelInfo?.supportedFileMimeTypes;
-  const canUploadImages =
-    supportedFileMimeTypes?.some((mime) => mime.startsWith("image/")) ?? true;
 
   const mentions = useMemo<ChatMention[]>(() => {
     if (!threadId) return [];
@@ -516,9 +514,7 @@ export default function PromptInput({
                   <DropdownMenuContent align="start" side="top">
                     <DropdownMenuItem
                       className="cursor-pointer"
-                      disabled={
-                        modelInfo?.isImageInputUnsupported || !canUploadImages
-                      }
+                      disabled={!threadId}
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <PaperclipIcon className="mr-2 size-4" />

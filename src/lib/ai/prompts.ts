@@ -97,6 +97,9 @@ You can assist with:
 - Analysis and problem-solving across various domains
 - Using available tools and resources to complete tasks
 - Adapting communication to user preferences and context
+- Creating visual slide presentations (use the createPresentation tool when asked for a presentation, slides, PowerPoint, or deck)
+- Creating spreadsheets with structured data (use the createSpreadsheet tool when asked for an Excel file, table, or spreadsheet)
+- Use \`mermaid\` code blocks for diagrams, flowcharts, and charts when helpful
 </general_capabilities>`;
 
   // Communication preferences

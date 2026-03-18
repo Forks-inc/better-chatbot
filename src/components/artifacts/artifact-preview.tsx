@@ -9,6 +9,7 @@ import {
 import type { Artifact } from "@/types/artifact";
 import { HtmlPreview } from "./html-preview";
 import { ReactIframePreview } from "./react-iframe-preview";
+import { MermaidDiagram } from "../mermaid-diagram";
 
 interface Props {
   artifact: Artifact;
@@ -58,6 +59,15 @@ export function ArtifactPreview({
         onCapture={onCapture}
         onCaptureEnd={onCaptureEnd}
       />
+    );
+  }
+
+  // Mermaid diagrams
+  if (artifact.type === "application/vnd.mermaid") {
+    return (
+      <div className="h-full w-full overflow-auto p-4">
+        <MermaidDiagram chart={content} />
+      </div>
     );
   }
 
