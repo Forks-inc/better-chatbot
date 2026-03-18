@@ -241,7 +241,10 @@ export class MCPClient {
         try {
           this.transport = new StreamableHTTPClientTransport(url, {
             requestInit: {
-              headers: config.headers,
+              headers: {
+                ...config.headers,
+                "User-Agent": "better-chatbot",
+              },
               signal: abortController.signal,
             },
             authProvider: this.createOAuthProvider(oauthState),
@@ -271,7 +274,10 @@ export class MCPClient {
 
             this.transport = new SSEClientTransport(url, {
               requestInit: {
-                headers: config.headers,
+                headers: {
+                  ...config.headers,
+                  "User-Agent": "better-chatbot",
+                },
                 signal: abortController.signal,
               },
               authProvider: this.createOAuthProvider(oauthState),
