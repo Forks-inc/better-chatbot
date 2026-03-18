@@ -2,6 +2,7 @@ import { McpServerCustomizationRepository } from "app-types/mcp";
 import { pgDb as db } from "../db.pg";
 import { McpServerCustomizationTable, McpServerTable } from "../schema.pg";
 import { and, eq } from "drizzle-orm";
+import { isUUID } from "lib/utils";
 
 export type McpServerCustomization = {
   id: string;
@@ -16,6 +17,7 @@ export type McpServerCustomization = {
 export const pgMcpServerCustomizationRepository: McpServerCustomizationRepository =
   {
     async selectByUserIdAndMcpServerId({ userId, mcpServerId }) {
+      if (!isUUID(mcpServerId)) return null;
       const [row] = await db
         .select({
           id: McpServerCustomizationTable.id,
@@ -57,6 +59,11 @@ export const pgMcpServerCustomizationRepository: McpServerCustomizationRepositor
     },
 
     async upsertMcpServerCustomization(data) {
+      if (!isUUID(data.mcpServerId)) {
+        throw new Error(
+          `Invalid MCP server ID: ${data.mcpServerId}. UUID expected.`,
+        );
+      }
       const now = new Date();
       const [result] = await db
         .insert(McpServerCustomizationTable)
@@ -76,6 +83,9 @@ export const pgMcpServerCustomizationRepository: McpServerCustomizationRepositor
           },
         })
         .returning();
+      if (!result) {
+        throw new Error("Failed to upsert MCP server customization");
+      }
       return result;
     },
 
@@ -83,6 +93,7 @@ export const pgMcpServerCustomizationRepository: McpServerCustomizationRepositor
       mcpServerId: string;
       userId: string;
     }) {
+      if (!isUUID(key.mcpServerId)) return;
       await db
         .delete(McpServerCustomizationTable)
         .where(

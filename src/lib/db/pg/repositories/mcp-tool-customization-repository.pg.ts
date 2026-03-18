@@ -1,11 +1,13 @@
 import { pgDb as db } from "../db.pg";
 import { McpServerTable, McpToolCustomizationTable } from "../schema.pg";
 import { and, eq } from "drizzle-orm";
+import { isUUID } from "lib/utils";
 import type { McpToolCustomizationRepository } from "@/types/mcp";
 
 export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository =
   {
     async select(key) {
+      if (!isUUID(key.mcpServerId)) return null;
       const [result] = await db
         .select()
         .from(McpToolCustomizationTable)
@@ -19,6 +21,7 @@ export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository
       return result;
     },
     async selectByUserIdAndMcpServerId(key) {
+      if (!isUUID(key.mcpServerId)) return [];
       const rows = await db
         .select()
         .from(McpToolCustomizationTable)
@@ -50,6 +53,11 @@ export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository
     },
 
     async upsertToolCustomization(data) {
+      if (!isUUID(data.mcpServerId)) {
+        throw new Error(
+          `Invalid MCP server ID: ${data.mcpServerId}. UUID expected.`,
+        );
+      }
       const now = new Date();
       const [result] = await db
         .insert(McpToolCustomizationTable)
@@ -71,10 +79,14 @@ export const pgMcpMcpToolCustomizationRepository: McpToolCustomizationRepository
           },
         })
         .returning();
+      if (!result) {
+        throw new Error("Failed to upsert MCP tool customization");
+      }
       return result as any;
     },
 
     async deleteToolCustomization(key) {
+      if (!isUUID(key.mcpServerId)) return;
       await db
         .delete(McpToolCustomizationTable)
         .where(

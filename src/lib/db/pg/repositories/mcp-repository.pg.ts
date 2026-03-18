@@ -1,7 +1,7 @@
 import { pgDb as db } from "../db.pg";
 import { McpServerTable, UserTable } from "../schema.pg";
 import { eq, or, desc } from "drizzle-orm";
-import { generateUUID } from "lib/utils";
+import { generateUUID, isUUID } from "lib/utils";
 import type { MCPRepository } from "app-types/mcp";
 
 export const pgMcpRepository: MCPRepository = {
@@ -31,6 +31,7 @@ export const pgMcpRepository: MCPRepository = {
   },
 
   async selectById(id) {
+    if (!isUUID(id)) return null;
     const [result] = await db
       .select()
       .from(McpServerTable)
@@ -72,6 +73,7 @@ export const pgMcpRepository: MCPRepository = {
   },
 
   async updateVisibility(id, visibility) {
+    if (!isUUID(id)) return;
     await db
       .update(McpServerTable)
       .set({ visibility, updatedAt: new Date() })
@@ -79,6 +81,7 @@ export const pgMcpRepository: MCPRepository = {
   },
 
   async deleteById(id) {
+    if (!isUUID(id)) return;
     await db.delete(McpServerTable).where(eq(McpServerTable.id, id));
   },
 
@@ -90,6 +93,7 @@ export const pgMcpRepository: MCPRepository = {
     return result;
   },
   async updateToolInfo(id, toolInfo) {
+    if (!isUUID(id)) return;
     await db
       .update(McpServerTable)
       .set({
@@ -101,6 +105,7 @@ export const pgMcpRepository: MCPRepository = {
   },
 
   async updateConnectionStatus(id, status) {
+    if (!isUUID(id)) return;
     await db
       .update(McpServerTable)
       .set({

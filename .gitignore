@@ -9,7 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+*.mcp-config.json
 # testing
 /coverage
 /tests/.auth
