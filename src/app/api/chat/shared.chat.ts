@@ -82,7 +82,7 @@ export function filterMCPToolsByAllowedMCPServers(
   allowedMcpServers?: Record<string, AllowedMCPServer>,
 ): Record<string, VercelAIMcpTool> {
   if (!allowedMcpServers || Object.keys(allowedMcpServers).length === 0) {
-    return {};
+    return tools; // Default to all tools if no restrictions provided
   }
   return objectFlow(tools).filter((_tool) => {
     if (!allowedMcpServers[_tool._mcpServerId]?.tools) return false;
@@ -443,12 +443,16 @@ export const loadAppDefaultTools = (opt?: {
         }, {});
       }
       const allowedAppDefaultToolkit =
-        opt?.allowedAppDefaultToolkit ?? Object.values(AppDefaultToolkit);
+        opt?.allowedAppDefaultToolkit && opt.allowedAppDefaultToolkit.length > 0
+          ? opt.allowedAppDefaultToolkit
+          : Object.values(AppDefaultToolkit);
 
       return (
         allowedAppDefaultToolkit.reduce(
           (acc, key) => {
-            return { ...acc, ...tools[key] };
+            const group = tools[key as AppDefaultToolkit];
+            if (!group) return acc;
+            return { ...acc, ...group };
           },
           {} as Record<string, Tool>,
         ) || {}
@@ -487,3 +491,73 @@ export const convertToSavePart = <T extends UIMessagePart<any, any>>(
     })
     .unwrap();
 };
+
+export function truncateMessages(messages: UIMessage[]): UIMessage[] {
+  const MAX_TEXT_LENGTH = 30000; // ~7.5k tokens
+  const MAX_TOOL_RESULT_LENGTH = 50000; // ~12.5k tokens
+  const MAX_TOTAL_MESSAGES = 40; // Only keep last 40 messages
+  const MAX_TOTAL_CHARS = 200000; // Total history chars limit (~50k tokens)
+
+  // 1. Prune messages count (keep first and last N)
+  let processedMessages = messages;
+  if (messages.length > MAX_TOTAL_MESSAGES) {
+    const systemMessages = messages.filter((m) => m.role === "system");
+    const otherMessages = messages.filter((m) => m.role !== "system");
+    processedMessages = [
+      ...systemMessages,
+      ...otherMessages.slice(-(MAX_TOTAL_MESSAGES - systemMessages.length)),
+    ];
+  }
+
+  // 2. Truncate each part
+  const truncated = processedMessages.map((message) => ({
+    ...message,
+    parts: message.parts.map((part) => {
+      if (part.type === "text") {
+        if (part.text.length > MAX_TEXT_LENGTH) {
+          return {
+            ...part,
+            text:
+              part.text.slice(0, MAX_TEXT_LENGTH) +
+              "\n\n[... Truncado por longitud ...]",
+          };
+        }
+      }
+      if (part.type === "tool-result") {
+        const toolResultPart = part as any;
+        const resultStr =
+          typeof toolResultPart.result === "string"
+            ? toolResultPart.result
+            : JSON.stringify(toolResultPart.result);
+
+        if (resultStr.length > MAX_TOOL_RESULT_LENGTH) {
+          return {
+            ...part,
+            result: {
+              _truncated: true,
+              data:
+                resultStr.slice(0, MAX_TOOL_RESULT_LENGTH) +
+                "\n\n[... Resultado truncado ...]",
+            },
+          };
+        }
+      }
+      return part;
+    }),
+  }));
+
+  // 3. Final total character check (keep newest)
+  let totalChars = 0;
+  const finalMessages: UIMessage[] = [];
+  for (let i = truncated.length - 1; i >= 0; i--) {
+    const msg = truncated[i];
+    const msgChars = JSON.stringify(msg).length;
+    if (totalChars + msgChars > MAX_TOTAL_CHARS && finalMessages.length > 2) {
+      break;
+    }
+    totalChars += msgChars;
+    finalMessages.unshift(msg);
+  }
+
+  return finalMessages;
+}

@@ -37,6 +37,7 @@ import {
   loadWorkFlowTools,
   loadAppDefaultTools,
   convertToSavePart,
+  truncateMessages,
 } from "./shared.chat";
 import {
   rememberAgentAction,
@@ -44,7 +45,7 @@ import {
 } from "./actions";
 import { getSession } from "auth/server";
 import { colorize } from "consola/utils";
-import { generateUUID } from "lib/utils";
+import { generateUUID, truncateString } from "lib/utils";
 import { nanoBananaTool, openaiImageTool } from "lib/ai/tools/image";
 import { ImageToolName } from "lib/ai/tools";
 import { buildCsvIngestionPreviewParts } from "@/lib/ai/ingest/csv-ingest";
@@ -317,8 +318,8 @@ export async function POST(request: Request) {
 
         const result = streamText({
           model,
-          system: systemPrompt,
-          messages: convertToModelMessages(messages),
+          system: truncateString(systemPrompt, 50000),
+          messages: convertToModelMessages(truncateMessages(messages)),
           experimental_transform: smoothStream({ chunking: "word" }),
           maxRetries: 2,
           tools: vercelAITooles,

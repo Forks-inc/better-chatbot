@@ -77,6 +77,7 @@ const staticModels = {
     "gpt-oss-120b:free": openrouter("openai/gpt-oss-120b:free"),
     "llama-3.3-70b:free": openrouter("meta-llama/llama-3.3-70b-instruct:free"),
     "qwen3-coder:free": openrouter("qwen/qwen3-coder:free"),
+    "qwen-2.5-72b:free": openrouter("qwen/qwen-2.5-72b-instruct:free"),
     "deepseek-r1:free": openrouter("deepseek/deepseek-r1:free"),
     "deepseek-v3:free": openrouter("deepseek/deepseek-chat-v3-0324:free"),
     "gemini-2.0-flash-exp:free": openrouter("google/gemini-2.0-flash-exp:free"),
@@ -92,7 +93,6 @@ const staticUnsupportedModels = new Set([
   staticModels.ollama["gemma3:4b"],
   staticModels.ollama["gemma3:12b"],
   staticModels.openRouter["gpt-oss-120b:free"],
-  staticModels.openRouter["llama-3.3-70b:free"],
 ]);
 
 const staticSupportImageInputModels = {
