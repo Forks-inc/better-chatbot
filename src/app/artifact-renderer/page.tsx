@@ -45,6 +45,41 @@ export default function ArtifactRendererPage() {
           (window as any).__babel__ = (window as any).Babel;
         }
 
+        // Pre-load common libraries from ESM CDN if they aren't loaded
+        // @ts-ignore
+        if (!(window as any).__Recharts__) {
+          try {
+            // @ts-ignore
+            (window as any).__Recharts__ = await import(
+              "https://esm.sh/recharts@2.12.7?bundle"
+            );
+          } catch (e) {
+            console.warn("Failed to load recharts", e);
+          }
+        }
+        // @ts-ignore
+        if (!(window as any).__LucideReact__) {
+          try {
+            // @ts-ignore
+            (window as any).__LucideReact__ = await import(
+              "https://esm.sh/lucide-react@0.364.0?bundle"
+            );
+          } catch (e) {
+            console.warn("Failed to load lucide-react", e);
+          }
+        }
+        // @ts-ignore
+        if (!(window as any).__FramerMotion__) {
+          try {
+            // @ts-ignore
+            (window as any).__FramerMotion__ = await import(
+              "https://esm.sh/framer-motion@11.0.24?bundle"
+            );
+          } catch (e) {
+            console.warn("Failed to load framer-motion", e);
+          }
+        }
+
         const Babel = (window as any).__babel__;
         const transformed = Babel.transform(code, {
           presets: ["react"],
@@ -54,17 +89,22 @@ export default function ArtifactRendererPage() {
         // Wrap in module factory
         const moduleCode = `
           const module = { exports: {} };
-          const require = (name) => {
+          const require = async (name) => {
             if (name === 'react') return window.__React__;
+            if (name === 'recharts') return window.__Recharts__;
+            if (name === 'lucide-react') return window.__LucideReact__;
+            if (name === 'framer-motion') return window.__FramerMotion__;
             throw new Error('Cannot require: ' + name);
           };
-          ${transformed}
-          return module.exports.default || module.exports;
+          // We need an async wrapper to support async requires
+          return (async () => {
+             ${transformed.replace(/require\(/g, "await require(")}
+             return module.exports.default || module.exports;
+          })();
         `;
 
         (window as any).__React__ = React;
-        // eslint-disable-next-line no-new-func
-        const Component = new Function(moduleCode)();
+        const Component = await new Function(moduleCode)();
 
         // Clear and render
         container.innerHTML = "";

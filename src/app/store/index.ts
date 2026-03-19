@@ -70,6 +70,7 @@ export interface AppState {
   artifacts: Record<string, Artifact | undefined>;
   currentArtifactId: string | null;
   artifactsPanelOpen: boolean;
+  pendingAutoMessage?: string;
 }
 
 export interface AppDispatch {
@@ -118,6 +119,7 @@ const initialState: AppState = {
   artifacts: {},
   currentArtifactId: null,
   artifactsPanelOpen: false,
+  pendingAutoMessage: undefined,
 };
 
 export const appStore = create<AppState & AppDispatch>()(

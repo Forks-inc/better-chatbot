@@ -10,6 +10,7 @@ import type { Artifact } from "@/types/artifact";
 import { HtmlPreview } from "./html-preview";
 import { ReactIframePreview } from "./react-iframe-preview";
 import { MermaidDiagram } from "../mermaid-diagram";
+import { SvgPreview } from "./svg-preview";
 
 interface Props {
   artifact: Artifact;
@@ -69,6 +70,11 @@ export function ArtifactPreview({
         <MermaidDiagram chart={content} />
       </div>
     );
+  }
+
+  // SVG previews
+  if (artifact.type === "image/svg+xml") {
+    return <SvgPreview artifact={{ ...artifact, content }} />;
   }
 
   // Non-previewable types

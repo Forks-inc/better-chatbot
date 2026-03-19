@@ -98,6 +98,7 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
     threadImageToolModel,
     artifacts,
     artifactsPanelOpen,
+    pendingAutoMessage,
   ] = appStore(
     useShallow((state) => [
       state.mutate,
@@ -111,6 +112,7 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
       state.threadImageToolModel,
       state.artifacts,
       state.artifactsPanelOpen,
+      state.pendingAutoMessage,
     ]),
   );
 
@@ -370,6 +372,16 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
       }));
     }
   }, [pendingThreadMention, threadId, appStoreMutate]);
+
+  useEffect(() => {
+    if (pendingAutoMessage && !isLoading) {
+      sendMessage({
+        role: "user",
+        parts: [{ type: "text", text: pendingAutoMessage }],
+      });
+      appStoreMutate({ pendingAutoMessage: undefined });
+    }
+  }, [pendingAutoMessage, isLoading, sendMessage, appStoreMutate, threadId]);
 
   useEffect(() => {
     if (isInitialThreadEntry)

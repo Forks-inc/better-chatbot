@@ -17,7 +17,11 @@ import {
   Maximize2,
   Minimize2,
   Scissors,
+  Share2,
+  Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
+import { appStore } from "@/app/store";
 import { Button } from "ui/button";
 import { cn } from "lib/utils";
 import type { Artifact } from "@/types/artifact";
@@ -49,7 +53,8 @@ function getDefaultTab(type: string | undefined): ActiveTab {
     type === "application/vnd.code-html" ||
     type === "application/vnd.presentation" ||
     type === "application/vnd.spreadsheet" ||
-    type === "application/vnd.mermaid"
+    type === "application/vnd.mermaid" ||
+    type === "image/svg+xml"
   ) {
     return "preview";
   }
@@ -97,6 +102,7 @@ export function ArtifactPanel({
   );
   const [currentCode, setCurrentCode] = useState<string | undefined>();
   const [exporting, setExporting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [capturing, setCapturing] = useState(false);
@@ -185,6 +191,30 @@ export function ArtifactPanel({
     },
     [],
   );
+
+  const handlePublish = useCallback(async () => {
+    if (!artifact) return;
+    setPublishing(true);
+    try {
+      const res = await fetch("/api/artifacts/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artifact }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to publish");
+      }
+      const { url } = await res.json();
+      const shareUrl = `${window.location.protocol}//${window.location.host}/a?url=${encodeURIComponent(url)}`;
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Public link copied to clipboard");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to publish artifact");
+    } finally {
+      setPublishing(false);
+    }
+  }, [artifact]);
 
   if (!artifact) return null;
 
@@ -302,6 +332,21 @@ export function ArtifactPanel({
             </Button>
           )}
 
+          {/* Ask AI to edit */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            title="Ask AI to edit"
+            onClick={() => {
+              appStore.getState().mutate({
+                pendingAutoMessage: `Please update the artifact "${artifact.title}"`,
+              });
+            }}
+          >
+            <Sparkles className="size-3.5 text-primary" />
+          </Button>
+
           {/* Copy */}
           <Button
             size="icon"
@@ -336,6 +381,22 @@ export function ArtifactPanel({
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
               <Download className="size-3.5" />
+            )}
+          </Button>
+
+          {/* Publish */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-7"
+            onClick={handlePublish}
+            disabled={publishing}
+            title="Publish public link"
+          >
+            {publishing ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Share2 className="size-3.5" />
             )}
           </Button>
 

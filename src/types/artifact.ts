@@ -19,7 +19,8 @@ export type ArtifactType =
   | "code"
   | "application/vnd.presentation"
   | "application/vnd.spreadsheet"
-  | "application/vnd.python";
+  | "application/vnd.python"
+  | "image/svg+xml";
 
 export type ArtifactFiles =
   | {

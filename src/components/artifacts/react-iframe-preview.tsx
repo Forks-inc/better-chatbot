@@ -4,6 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "ui/button";
 import { SelectionTool, Selection } from "./selection-tool";
+import { appStore } from "@/app/store";
 import type { Artifact } from "@/types/artifact";
 
 interface Props {
@@ -94,6 +95,18 @@ export function ReactIframePreview({
             }}
           >
             Retry
+          </Button>
+          <Button
+            size="sm"
+            variant="default"
+            className="shrink-0 h-6 px-2 text-xs"
+            onClick={() => {
+              appStore.getState().mutate({
+                pendingAutoMessage: `Fix the following error in the artifact:\n\n\`\`\`\n${error}\n\`\`\``,
+              });
+            }}
+          >
+            Fix with AI
           </Button>
         </div>
       )}

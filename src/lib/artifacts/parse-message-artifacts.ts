@@ -44,6 +44,7 @@ function normalizeType(raw: string | null): ArtifactType {
     "application/vnd.spreadsheet": "application/vnd.spreadsheet",
     "application/vnd.python": "application/vnd.python",
     "application/code": "code",
+    "image/svg+xml": "image/svg+xml",
     code: "code",
   };
   return map[raw] ?? "code";
