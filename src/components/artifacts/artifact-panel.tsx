@@ -19,7 +19,14 @@ import {
   Scissors,
   Share2,
   Sparkles,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "ui/dropdown-menu";
 import { toast } from "sonner";
 import { appStore } from "@/app/store";
 import { Button } from "ui/button";
@@ -362,66 +369,48 @@ export function ArtifactPanel({
             )}
           </Button>
 
-          {/* Download */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            onClick={handleDownload}
-            disabled={exporting}
-            title={
-              isPresentation
-                ? "Export .pptx"
-                : isSpreadsheet
-                  ? "Export .xlsx"
-                  : "Download"
-            }
-          >
-            {exporting ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Download className="size-3.5" />
-            )}
-          </Button>
-
-          {/* Publish */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            onClick={handlePublish}
-            disabled={publishing}
-            title="Publish public link"
-          >
-            {publishing ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Share2 className="size-3.5" />
-            )}
-          </Button>
-
           <div className="w-px h-4 bg-border mx-0.5" />
 
-          {/* Fullscreen */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
-            onClick={() => setFullscreen((v) => !v)}
-          >
-            {fullscreen ? (
-              <Minimize2 className="size-3.5" />
-            ) : (
-              <Maximize2 className="size-3.5" />
-            )}
-          </Button>
+          {/* More Actions Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="ghost" className="size-7">
+                <MoreVertical className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleDownload} disabled={exporting}>
+                {exporting ? (
+                  <Loader2 className="mr-2 size-3.5 animate-spin" />
+                ) : (
+                  <Download className="mr-2 size-3.5" />
+                )}
+                <span>Export / Download</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePublish} disabled={publishing}>
+                {publishing ? (
+                  <Loader2 className="mr-2 size-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="mr-2 size-3.5" />
+                )}
+                <span>Publish public link</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFullscreen((v) => !v)}>
+                {fullscreen ? (
+                  <Minimize2 className="mr-2 size-3.5" />
+                ) : (
+                  <Maximize2 className="mr-2 size-3.5" />
+                )}
+                <span>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Close */}
           <Button
             size="icon"
             variant="ghost"
-            className="size-7"
+            className="size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             onClick={onClose}
           >
             <X className="size-3.5" />

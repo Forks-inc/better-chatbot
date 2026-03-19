@@ -357,9 +357,14 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
   useEffect(() => {
     appStoreMutate({ currentThreadId: threadId });
     return () => {
-      appStoreMutate({ currentThreadId: null });
+      appStoreMutate({
+        currentThreadId: null,
+        artifacts: {},
+        currentArtifactId: null,
+        artifactsPanelOpen: false,
+      });
     };
-  }, [threadId]);
+  }, [threadId, appStoreMutate]);
 
   useEffect(() => {
     if (pendingThreadMention && threadId) {
