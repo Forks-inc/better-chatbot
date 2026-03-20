@@ -50,9 +50,10 @@ export default function ArtifactRendererPage() {
         if (!(window as any).__Recharts__) {
           try {
             // @ts-ignore
-            (window as any).__Recharts__ = await import(
+            const rechartsModule = await import(
               "https://esm.sh/recharts@2.12.7?bundle"
             );
+            (window as any).__Recharts__ = rechartsModule;
           } catch (e) {
             console.warn("Failed to load recharts", e);
           }
@@ -61,9 +62,10 @@ export default function ArtifactRendererPage() {
         if (!(window as any).__LucideReact__) {
           try {
             // @ts-ignore
-            (window as any).__LucideReact__ = await import(
+            const lucideModule = await import(
               "https://esm.sh/lucide-react@0.364.0?bundle"
             );
+            (window as any).__LucideReact__ = lucideModule;
           } catch (e) {
             console.warn("Failed to load lucide-react", e);
           }
@@ -72,9 +74,10 @@ export default function ArtifactRendererPage() {
         if (!(window as any).__FramerMotion__) {
           try {
             // @ts-ignore
-            (window as any).__FramerMotion__ = await import(
+            const framerModule = await import(
               "https://esm.sh/framer-motion@11.0.24?bundle"
             );
+            (window as any).__FramerMotion__ = framerModule;
           } catch (e) {
             console.warn("Failed to load framer-motion", e);
           }

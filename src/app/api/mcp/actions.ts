@@ -153,11 +153,12 @@ export async function removeMcpClientAction(id: string) {
   if (FILE_BASED_MCP_CONFIG) {
     // In file-based mode, the manager handles removal from the file
     // We check if it exists in the manager first
-    const client = await mcpClientsManager.getClient(id);
-    if (!client) {
-      throw new Error("MCP server not found");
-    }
-    await mcpClientsManager.removeClient(id);
+    try {
+      const client = await mcpClientsManager.getClient(id);
+      if (client) {
+        await mcpClientsManager.removeClient(id);
+      }
+    } catch {}
     return;
   }
 
@@ -180,7 +181,11 @@ export async function removeMcpClientAction(id: string) {
 }
 
 export async function refreshMcpClientAction(id: string) {
-  await mcpClientsManager.refreshClient(id);
+  try {
+    await mcpClientsManager.refreshClient(id);
+  } catch (_err: any) {
+    // Ignore refresh errors for non-existent clients to prevent 500s
+  }
 }
 
 export async function authorizeMcpClientAction(id: string) {

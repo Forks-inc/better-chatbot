@@ -292,7 +292,11 @@ export class MCPClientsManager {
     await this.waitInitialized();
     const client = this.clients.get(id);
     if (!client) {
-      await this.refreshClient(id);
+      await this.refreshClient(id).catch((e) => {
+        this.logger.debug(
+          `Failed to refresh client ${id} on getClient: ${e.message}`,
+        );
+      });
     }
 
     return this.clients.get(id);

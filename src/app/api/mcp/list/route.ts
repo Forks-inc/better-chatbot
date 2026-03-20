@@ -2,6 +2,7 @@ import { MCPServerInfo } from "app-types/mcp";
 import { mcpClientsManager } from "lib/ai/mcp/mcp-manager";
 import { mcpRepository } from "lib/db/repository";
 import { getCurrentUser } from "lib/auth/permissions";
+import { FILE_BASED_MCP_CONFIG } from "lib/const";
 
 export async function GET() {
   const currentUser = await getCurrentUser();
@@ -10,14 +11,32 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [servers, memoryClients] = await Promise.all([
-    mcpRepository.selectAllForUser(currentUser.id),
-    mcpClientsManager.getClients(),
-  ]);
-
+  const memoryClients = await mcpClientsManager.getClients();
   const memoryMap = new Map(
     memoryClients.map(({ id, client }) => [id, client] as const),
   );
+
+  if (FILE_BASED_MCP_CONFIG) {
+    const defaultList = memoryClients.map(({ client, id }) => {
+      const info = client.getInfo();
+      return {
+        ...info,
+        id,
+        userId: currentUser.id,
+        visibility: "private" as const,
+        isOwner: true,
+        canManage: true,
+        enabled: info.enabled ?? true,
+        status: info.status ?? "disconnected",
+        lastConnectionStatus: info.lastConnectionStatus,
+        error: info.error,
+        toolInfo: info.toolInfo ?? [],
+      } as MCPServerInfo;
+    });
+    return Response.json(defaultList);
+  }
+
+  const servers = await mcpRepository.selectAllForUser(currentUser.id);
 
   // Add servers that exist in DB but not yet in memory
   const addTargets = servers.filter((server) => !memoryMap.has(server.id));
