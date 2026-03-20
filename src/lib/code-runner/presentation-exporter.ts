@@ -283,7 +283,7 @@ for s in slides_data:
 buf = io.BytesIO()
 prs.save(buf)
 buf.seek(0)
-# Use print() so artifact-panel.tsx can find it in stdout logs
+# Final output via print() so frontend captures it in logs
 print("data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64," + base64.b64encode(buf.read()).decode())
 `.trim();
 }
