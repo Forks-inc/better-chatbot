@@ -71,54 +71,74 @@ const THEMES: Record<
   PresentationTheme,
   {
     slide: string;
-    titleBg: string;
+    header: string;
+    titleSlide: string;
     title: string;
+    titleText: string;
     body: string;
     accent: string;
     muted: string;
     bullet: string;
+    cardBg: string;
+    cardBorder: string;
     chartColors: string[];
   }
 > = {
   dark: {
-    slide: "bg-gray-900 text-white",
-    titleBg: "bg-gray-800",
+    slide: "bg-gray-950 text-gray-100",
+    header: "bg-gray-900 border-b border-gray-800",
+    titleSlide: "bg-gray-950 text-white",
     title: "text-white",
-    body: "text-gray-200",
-    accent: "text-blue-400",
-    muted: "text-gray-400",
-    bullet: "bg-blue-400",
-    chartColors: ["#60a5fa", "#34d399", "#f59e0b", "#f87171", "#a78bfa"],
+    titleText: "text-white",
+    body: "text-gray-300",
+    accent: "text-blue-500",
+    muted: "text-gray-500",
+    bullet: "bg-blue-500",
+    cardBg: "bg-gray-900",
+    cardBorder: "border-gray-800 border-2 shadow-xl shadow-black/50",
+    chartColors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
   },
   light: {
-    slide: "bg-white text-gray-900",
-    titleBg: "bg-gray-50",
-    title: "text-gray-900",
-    body: "text-gray-700",
+    slide: "bg-slate-50 text-slate-900",
+    header: "bg-blue-600 border-none",
+    titleSlide: "bg-blue-600 text-white",
+    title: "text-slate-900",
+    titleText: "text-white",
+    body: "text-slate-600",
     accent: "text-blue-600",
-    muted: "text-gray-500",
+    muted: "text-slate-400",
     bullet: "bg-blue-600",
+    cardBg: "bg-white",
+    cardBorder: "border-slate-100 border shadow-md rounded-xl",
     chartColors: ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed"],
   },
   corporate: {
-    slide: "bg-slate-800 text-white",
-    titleBg: "bg-blue-900",
-    title: "text-white",
-    body: "text-slate-200",
-    accent: "text-cyan-400",
-    muted: "text-slate-400",
-    bullet: "bg-cyan-400",
-    chartColors: ["#22d3ee", "#38bdf8", "#818cf8", "#fb923c", "#34d399"],
+    slide: "bg-[#F4F7F9] text-slate-800",
+    header: "bg-[#005B73]",
+    titleSlide: "bg-[#005B73] text-white",
+    title: "text-[#005B73]",
+    titleText: "text-white",
+    body: "text-slate-700",
+    accent: "text-[#008C99]",
+    muted: "text-slate-500",
+    bullet: "bg-[#008C99]",
+    cardBg: "bg-white",
+    cardBorder: "border-[#005B73]/20 border-2 shadow-sm rounded-xl",
+    chartColors: ["#005B73", "#008C99", "#4CB1C4", "#FFC72C", "#F26922"],
   },
   minimal: {
-    slide: "bg-stone-50 text-stone-800",
-    titleBg: "bg-stone-100",
-    title: "text-stone-900",
-    body: "text-stone-600",
-    accent: "text-stone-900",
-    muted: "text-stone-400",
-    bullet: "bg-stone-800",
-    chartColors: ["#292524", "#44403c", "#78716c", "#a8a29e", "#d6d3d1"],
+    slide: "bg-[#FDFBF7] text-[#2C2C2C]",
+    header: "bg-[#E84E36]",
+    titleSlide: "bg-[#E84E36] text-white",
+    title: "text-[#2C2C2C]",
+    titleText: "text-white",
+    body: "text-[#4A4A4A]",
+    accent: "text-[#E84E36]",
+    muted: "text-[#999999]",
+    bullet: "bg-[#E84E36]",
+    cardBg: "bg-white",
+    cardBorder: "border-[#E84E36]/10 border-2 shadow-sm rounded-xl",
+    chartColors: ["#E84E36", "#2C2C2C", "#F4A261", "#E76F51", "#2A9D8F"],
   },
 };
 
@@ -132,13 +152,15 @@ function BulletList({
   t: (typeof THEMES)[PresentationTheme];
 }) {
   return (
-    <ul className="space-y-3 mt-2">
+    <ul className="space-y-4">
       {bullets.map((b, i) => (
-        <li key={i} className="flex items-start gap-3">
+        <li key={i} className="flex items-start gap-4">
           <span
-            className={cn("mt-2 w-1.5 h-1.5 rounded-full shrink-0", t.bullet)}
+            className={cn("mt-2.5 w-2 h-2 rounded-full shrink-0", t.bullet)}
           />
-          <span className={cn("text-base leading-relaxed", t.body)}>{b}</span>
+          <span className={cn("text-lg leading-relaxed font-medium", t.body)}>
+            {b}
+          </span>
         </li>
       ))}
     </ul>
@@ -211,43 +233,88 @@ function renderSlide(slide: Slide, t: (typeof THEMES)[PresentationTheme]) {
   switch (slide.layout) {
     case "title":
       return (
-        <div className="flex flex-col items-center justify-center h-full text-center px-16">
-          <h1 className={cn("text-4xl font-bold leading-tight mb-4", t.title)}>
+        <div
+          className={cn(
+            "flex flex-col items-center justify-center h-full text-center px-16 relative overflow-hidden",
+            t.titleSlide,
+          )}
+        >
+          <div
+            className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--gradient-color)_0%,_transparent_100%)] block pointer-events-none"
+            style={{ "--gradient-color": "currentColor" } as any}
+          />
+          <h1 className="text-5xl font-extrabold leading-tight mb-6 z-10 max-w-4xl tracking-tight">
             {slide.title}
           </h1>
           {slide.subtitle && (
-            <p className={cn("text-xl", t.muted)}>{slide.subtitle}</p>
+            <p className="text-2xl font-medium opacity-90 z-10 max-w-3xl">
+              {slide.subtitle}
+            </p>
           )}
         </div>
       );
 
     case "content":
       return (
-        <div className="flex flex-col h-full px-12 py-8">
-          <h2 className={cn("text-2xl font-bold mb-6", t.title)}>
-            {slide.title}
-          </h2>
-          {slide.body && (
-            <p className={cn("text-base leading-relaxed mb-4", t.body)}>
-              {slide.body}
-            </p>
-          )}
-          {slide.bullets && <BulletList bullets={slide.bullets} t={t} />}
+        <div className="flex flex-col h-full bg-inherit">
+          <div className={cn("px-12 py-6 shrink-0 shadow-sm z-10", t.header)}>
+            <h2
+              className={cn("text-3xl font-bold tracking-tight", t.titleText)}
+            >
+              {slide.title}
+            </h2>
+          </div>
+          <div className="flex-1 px-12 py-8 overflow-y-auto">
+            <div
+              className={cn(
+                "h-full rounded-2xl p-8 flex flex-col items-start justify-center",
+                t.cardBg,
+                t.cardBorder,
+              )}
+            >
+              {slide.body && (
+                <p
+                  className={cn(
+                    "text-lg leading-relaxed mb-6 font-medium",
+                    t.body,
+                  )}
+                >
+                  {slide.body}
+                </p>
+              )}
+              {slide.bullets && <BulletList bullets={slide.bullets} t={t} />}
+            </div>
+          </div>
         </div>
       );
 
     case "two-column":
       return (
-        <div className="flex flex-col h-full px-12 py-8">
+        <div className="flex flex-col h-full bg-inherit">
           {slide.title && (
-            <h2 className={cn("text-2xl font-bold mb-6", t.title)}>
-              {slide.title}
-            </h2>
+            <div className={cn("px-12 py-6 shrink-0 shadow-sm z-10", t.header)}>
+              <h2
+                className={cn("text-3xl font-bold tracking-tight", t.titleText)}
+              >
+                {slide.title}
+              </h2>
+            </div>
           )}
-          <div className="flex-1 grid grid-cols-2 gap-8">
-            <div>
+          <div className="flex-1 grid grid-cols-2 gap-8 px-12 py-8 overflow-y-auto">
+            <div
+              className={cn(
+                "rounded-2xl p-8 flex flex-col justify-center",
+                t.cardBg,
+                t.cardBorder,
+              )}
+            >
               {slide.leftContent && (
-                <p className={cn("text-sm leading-relaxed mb-3", t.body)}>
+                <p
+                  className={cn(
+                    "text-lg leading-relaxed mb-6 font-medium",
+                    t.body,
+                  )}
+                >
                   {slide.leftContent}
                 </p>
               )}
@@ -255,9 +322,20 @@ function renderSlide(slide: Slide, t: (typeof THEMES)[PresentationTheme]) {
                 <BulletList bullets={slide.leftBullets} t={t} />
               )}
             </div>
-            <div>
+            <div
+              className={cn(
+                "rounded-2xl p-8 flex flex-col justify-center",
+                t.cardBg,
+                t.cardBorder,
+              )}
+            >
               {slide.rightContent && (
-                <p className={cn("text-sm leading-relaxed mb-3", t.body)}>
+                <p
+                  className={cn(
+                    "text-lg leading-relaxed mb-6 font-medium",
+                    t.body,
+                  )}
+                >
                   {slide.rightContent}
                 </p>
               )}
@@ -271,59 +349,102 @@ function renderSlide(slide: Slide, t: (typeof THEMES)[PresentationTheme]) {
 
     case "chart":
       return (
-        <div className="flex flex-col h-full px-12 py-8">
-          <h2 className={cn("text-2xl font-bold mb-4", t.title)}>
-            {slide.title}
-          </h2>
-          {slide.chart && (
-            <div className="flex-1 flex items-center">
-              <div className="w-full">
-                <SlideChart chart={slide.chart} colors={t.chartColors} />
-              </div>
+        <div className="flex flex-col h-full bg-inherit">
+          <div className={cn("px-12 py-6 shrink-0 shadow-sm z-10", t.header)}>
+            <h2
+              className={cn("text-3xl font-bold tracking-tight", t.titleText)}
+            >
+              {slide.title}
+            </h2>
+          </div>
+          <div className="flex-1 p-8 overflow-y-auto">
+            <div
+              className={cn(
+                "h-full rounded-2xl p-8 flex flex-col items-center justify-center",
+                t.cardBg,
+                t.cardBorder,
+              )}
+            >
+              {slide.chart ? (
+                <div className="w-full h-full min-h-[300px]">
+                  <SlideChart chart={slide.chart} colors={t.chartColors} />
+                </div>
+              ) : (
+                <div
+                  className={cn("flex flex-col items-center gap-3", t.muted)}
+                >
+                  <BarChart2 className="size-16 opacity-30" />
+                  <span className="text-lg">No chart data</span>
+                </div>
+              )}
             </div>
-          )}
-          {!slide.chart && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className={cn("flex flex-col items-center gap-2", t.muted)}>
-                <BarChart2 className="size-12 opacity-30" />
-                <span className="text-sm">No chart data</span>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       );
 
     case "quote":
       return (
-        <div className="flex flex-col items-center justify-center h-full text-center px-16">
-          <span
-            className={cn(
-              "text-7xl font-serif leading-none mb-4 opacity-30",
-              t.accent,
-            )}
-          >
-            "
-          </span>
-          <blockquote
-            className={cn("text-xl leading-relaxed italic mb-6", t.body)}
-          >
-            {slide.quote ?? slide.body}
-          </blockquote>
-          {slide.author && (
-            <p className={cn("text-sm font-medium", t.muted)}>
-              — {slide.author}
-            </p>
-          )}
+        <div className="flex flex-col h-full bg-inherit">
+          <div className="flex-1 p-12 overflow-y-auto flex items-center justify-center">
+            <div
+              className={cn(
+                "w-full h-full rounded-3xl p-16 flex flex-col items-center justify-center text-center relative overflow-hidden",
+                t.cardBg,
+                t.cardBorder,
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-8 left-8 text-9xl font-serif leading-none opacity-10",
+                  t.accent,
+                )}
+              >
+                "
+              </span>
+              <blockquote
+                className={cn(
+                  "text-3xl leading-relaxed italic mb-8 font-medium relative z-10 max-w-4xl",
+                  t.body,
+                )}
+              >
+                {slide.quote ?? slide.body}
+              </blockquote>
+              {slide.author && (
+                <p
+                  className={cn(
+                    "text-xl font-bold tracking-wide uppercase",
+                    t.accent,
+                  )}
+                >
+                  — {slide.author}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       );
 
     default:
       return (
-        <div className="flex flex-col h-full px-12 py-8">
-          <h2 className={cn("text-2xl font-bold mb-4", t.title)}>
-            {slide.title}
-          </h2>
-          <p className={cn("text-base", t.body)}>{slide.body}</p>
+        <div className="flex flex-col h-full bg-inherit">
+          <div className={cn("px-12 py-6 shrink-0 shadow-sm z-10", t.header)}>
+            <h2
+              className={cn("text-3xl font-bold tracking-tight", t.titleText)}
+            >
+              {slide.title}
+            </h2>
+          </div>
+          <div className="flex-1 px-12 py-8 overflow-y-auto">
+            <div
+              className={cn(
+                "h-full rounded-2xl p-8 flex flex-col items-start justify-center",
+                t.cardBg,
+                t.cardBorder,
+              )}
+            >
+              <p className={cn("text-lg font-medium", t.body)}>{slide.body}</p>
+            </div>
+          </div>
         </div>
       );
   }

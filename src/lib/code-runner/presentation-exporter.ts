@@ -16,7 +16,7 @@ from pptx.chart.data import ChartData
 from pptx.enum.chart import XL_CHART_TYPE
 from pptx.oxml.ns import qn
 from lxml import etree
-import copy, json, base64, io
+import copy, json, base64, io, urllib.request
 
 data = json.loads(${escaped})
 slides_data = data.get("slides", [])
@@ -24,10 +24,54 @@ theme = data.get("theme", "corporate")
 
 # ── Theme palettes ─────────────────────────────────────────────────────────
 PALETTES = {
-  "dark":      {"bg": (0x0f,0x17,0x2a), "bg2": (0x1e,0x29,0x3b), "title": (0xff,0xff,0xff), "body": (0xe2,0xe8,0xf0), "accent": (0x60,0xa5,0xfa), "muted": (0x94,0xa3,0xb8), "chart": [(0x60,0xa5,0xfa),(0x34,0xd3,0x99),(0xf5,0x9e,0x0b),(0xf8,0x71,0x71),(0xa7,0x8b,0xfa)]},
-  "light":     {"bg": (0xff,0xff,0xff), "bg2": (0xf1,0xf5,0xf9), "title": (0x0f,0x17,0x2a), "body": (0x33,0x4a,0x5e), "accent": (0x25,0x63,0xeb), "muted": (0x64,0x74,0x8b), "chart": [(0x25,0x63,0xeb),(0x16,0xa3,0x4a),(0xd9,0x77,0x06),(0xdc,0x26,0x26),(0x7c,0x3a,0xed)]},
-  "corporate": {"bg": (0x09,0x13,0x2d), "bg2": (0x0e,0x2a,0x5c), "title": (0xff,0xff,0xff), "body": (0xcc,0xdb,0xf0), "accent": (0x00,0xb4,0xd8), "muted": (0x90,0xa8,0xcc), "chart": [(0x00,0xb4,0xd8),(0x90,0xe0,0xef),(0x03,0x04,0x5e),(0x48,0xca,0xe4),(0x00,0x77,0xb6)]},
-  "minimal":   {"bg": (0xfa,0xfa,0xf9), "bg2": (0xf5,0xf5,0xf4), "title": (0x1c,0x19,0x17), "body": (0x44,0x40,0x3c), "accent": (0x1c,0x19,0x17), "muted": (0x78,0x71,0x6c), "chart": [(0x29,0x25,0x24),(0x57,0x53,0x4e),(0x78,0x71,0x6c),(0xa8,0xa2,0x9e),(0xd6,0xd3,0xd1)]},
+  "dark": {
+    "slide": (0x02,0x06,0x17),      # bg-gray-950
+    "header": (0x03,0x07,0x12),     # bg-gray-900
+    "titleSlide": (0x02,0x06,0x17), 
+    "titleText": (0xff,0xff,0xff),
+    "body": (0xd1,0xd5,0xdb),       # text-gray-300
+    "accent": (0x3b,0x82,0xf6),     # blue-500
+    "cardBg": (0x03,0x07,0x12),     # bg-gray-900
+    "cardBorder": (0x1f,0x29,0x37), # border-gray-800
+    "chart": [(0x3b,0x82,0xf6), (0x10,0xb9,0x81), (0xf5,0x9e,0x0b), (0xef,0x44,0x44), (0x8b,0x5c,0xf6)],
+    "muted": (0x94,0xa3,0xb8)
+  },
+  "light": {
+    "slide": (0xf8,0xfa,0xfc),      # bg-slate-50
+    "header": (0x25,0x63,0xeb),     # bg-blue-600
+    "titleSlide": (0x25,0x63,0xeb), 
+    "titleText": (0xff,0xff,0xff),
+    "body": (0x47,0x55,0x69),       # text-slate-600
+    "accent": (0x25,0x63,0xeb),     # blue-600
+    "cardBg": (0xff,0xff,0xff),     # bg-white
+    "cardBorder": (0xf1,0xf5,0xf9), # border-slate-100
+    "chart": [(0x25,0x63,0xeb), (0x16,0xa3,0x4a), (0xd9,0x77,0x06), (0xdc,0x26,0x26), (0x7c,0x3a,0xed)],
+    "muted": (0x64,0x74,0x8b)
+  },
+  "corporate": {
+    "slide": (0xf4,0xf7,0xf9),      # #F4F7F9
+    "header": (0x00,0x5b,0x73),     # #005B73
+    "titleSlide": (0x00,0x5b,0x73),
+    "titleText": (0xff,0xff,0xff),
+    "body": (0x33,0x41,0x55),       # slate-700
+    "accent": (0x00,0x8c,0x99),     # #008C99
+    "cardBg": (0xff,0xff,0xff),     # white
+    "cardBorder": (0x00,0x5b,0x73),
+    "chart": [(0x00,0x5b,0x73), (0x00,0x8c,0x99), (0x4cb1,0xc4), (0xf2,0x69,0x22), (0xe8,0x4e,0x36)],
+    "muted": (0x64,0x74,0x8b)
+  },
+  "minimal": {
+    "slide": (0xfd,0xfb,0xf7),      # #FDFBF7
+    "header": (0xe8,0x4e,0x36),     # #E84E36
+    "titleSlide": (0xe8,0x4e,0x36),
+    "titleText": (0xff,0xff,0xff),
+    "body": (0x4a,0x4a,0x4a),       # #4A4A4A
+    "accent": (0xe8,0x4e,0x36),     # #E84E36
+    "cardBg": (0xff,0xff,0xff),     # white
+    "cardBorder": (0xe8,0x4e,0x36),
+    "chart": [(0xe8,0x4e,0x36), (0x2c,0x2c,0x2c), (0xf4,0xa2,0x61), (0xe7,0x6f,0x51), (0x2a,0x9d,0x8f)],
+    "muted": (0x64,0x74,0x8b)
+  }
 }
 p = PALETTES.get(theme, PALETTES["corporate"])
 
@@ -47,212 +91,199 @@ def set_bg(slide, color_tuple):
     fill.solid()
     fill.fore_color.rgb = rgb(color_tuple)
 
-def add_rect(slide, left, top, width, height, color_tuple):
+def add_rect(slide, left, top, width, height, color_tuple, border_color=None, border_width=Pt(1)):
     shape = slide.shapes.add_shape(1, left, top, width, height)
     shape.fill.solid()
     shape.fill.fore_color.rgb = rgb(color_tuple)
-    shape.line.fill.background()
+    if border_color:
+        shape.line.color.rgb = rgb(border_color)
+        shape.line.width = border_width
+    else:
+        shape.line.fill.background()
     return shape
 
 def add_tb(slide, text, left, top, width, height,
-           size=18, bold=False, color=None, align=PP_ALIGN.LEFT, wrap=True):
+           size=18, bold=False, color=None, align=PP_ALIGN.LEFT, wrap=True, font_family="Helvetica"):
     if not text:
         return
     txb = slide.shapes.add_textbox(left, top, width, height)
     tf  = txb.text_frame
     tf.word_wrap = wrap
-    p_obj = tf.paragraphs[0]
+    try:
+        p_obj = tf.paragraphs[0]
+    except:
+        p_obj = tf.add_paragraph()
     p_obj.alignment = align
     run = p_obj.add_run()
     run.text = str(text)
+    run.font.name = font_family
     run.font.size  = Pt(size)
     run.font.bold  = bold
-    run.font.color.rgb = rgb(color) if color else rgb(p["title"])
+    run.font.color.rgb = rgb(color) if color else rgb(p["titleText"])
 
-def add_accent_bar(slide, color_tuple=None, height=Inches(0.06)):
-    c = color_tuple or p["accent"]
-    add_rect(slide, 0, 0, W, height, c)
+def add_image(slide, url, left, top, width, height):
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req) as response:
+            image_data = response.read()
+            image_stream = io.BytesIO(image_data)
+            slide.shapes.add_picture(image_stream, left, top, width=width, height=height)
+    except Exception as e:
+        print(f"Error loading image: {e}")
+        add_rect(slide, left, top, width, height, p["cardBg"], border_color=p["cardBorder"])
+        add_tb(slide, "Click to open image", left + Inches(0.5), top + height/2, width - Inches(1.0), Inches(0.5), size=12, color=p["muted"])
 
 def add_chart_to_slide(slide, chart_data_dict, left, top, width, height):
-    ctype = chart_data_dict.get("type", "bar")
-    raw   = chart_data_dict.get("data", [])
-    categories = [str(d.get("name","")) for d in raw]
-    values     = [float(d.get("value", 0)) for d in raw]
-
-    cd = ChartData()
-    cd.categories = categories
-    cd.add_series("", values)
-
-    xl_type_map = {
-        "bar":  XL_CHART_TYPE.COLUMN_CLUSTERED,
-        "line": XL_CHART_TYPE.LINE,
-        "pie":  XL_CHART_TYPE.PIE,
-    }
-    xl_type = xl_type_map.get(ctype, XL_CHART_TYPE.COLUMN_CLUSTERED)
-
-    graphic_frame = slide.shapes.add_chart(xl_type, left, top, width, height, cd)
-    chart = graphic_frame.chart
-
-    # Style chart
-    plot = chart.plots[0]
-
-    # Color each series/point
-    accent_rgb = rgb(p["accent"])
-    chart_colors = p["chart"]
-
-    if ctype == "pie":
-        for idx, point in enumerate(plot.series[0].points):
-            c = chart_colors[idx % len(chart_colors)]
-            point.format.fill.solid()
-            point.format.fill.fore_color.rgb = rgb(c)
-    else:
-        for series in plot.series:
-            series.format.fill.solid()
-            series.format.fill.fore_color.rgb = accent_rgb
-
-    # Style chart area backgrounds and axes — wrapped in try/except
-    # because attribute availability varies by python-pptx version
     try:
-        chart.chart_area.format.fill.background()
-    except Exception:
-        pass
-    try:
-        chart.plot_area.format.fill.background()
-    except Exception:
-        pass
+        ctype = chart_data_dict.get("type", "bar")
+        raw   = chart_data_dict.get("data", [])
+        if not raw: return
+        
+        categories = [str(d.get("name","")) for d in raw]
+        values     = [float(d.get("value", 0)) for d in raw]
 
-    # Legend
-    try:
-        if ctype == "pie" and chart.has_legend:
-            chart.legend.position = 2  # right
-            chart.legend.include_in_layout = False
-    except Exception:
-        pass
+        cd = ChartData()
+        cd.categories = categories
+        cd.add_series("", values)
 
-    # Remove gridlines visual noise
-    try:
-        chart.value_axis.major_gridlines.format.line.fill.background()
-    except Exception:
-        pass
+        xl_type_map = {
+            "bar":  XL_CHART_TYPE.COLUMN_CLUSTERED,
+            "line": XL_CHART_TYPE.LINE,
+            "pie":  XL_CHART_TYPE.PIE,
+        }
+        xl_type = xl_type_map.get(ctype, XL_CHART_TYPE.COLUMN_CLUSTERED)
 
-    # Axis label colors
-    try:
-        ax_color = rgb(p["muted"])
-        for axis in [chart.category_axis, chart.value_axis]:
-            axis.tick_labels.font.size = Pt(10)
-            axis.tick_labels.font.color.rgb = ax_color
-            axis.format.line.fill.background()
-    except Exception:
-        pass
+        graphic_frame = slide.shapes.add_chart(xl_type, left, top, width, height, cd)
+        chart = graphic_frame.chart
+        plot = chart.plots[0]
 
-    return graphic_frame
-
-# ── Slide renderers ────────────────────────────────────────────────────────
-for s in slides_data:
-    slide = prs.slides.add_slide(blank)
-    set_bg(slide, p["bg"])
-    layout  = s.get("layout", "content")
-    title   = s.get("title", "")
-    subtitle= s.get("subtitle", "")
-    body    = s.get("body", "")
-    bullets = s.get("bullets", [])
-    notes   = s.get("notes", "")
-
-    if notes:
-        slide.notes_slide.notes_text_frame.text = notes
-
-    if layout == "title":
-        # Full-slide gradient feel via two rects
-        add_rect(slide, 0, 0, W, H, p["bg"])
-        add_rect(slide, 0, Inches(2.8), W, Inches(2.0), p["bg2"])
-        add_accent_bar(slide, p["accent"], Inches(0.08))
-        # Bottom bar
-        add_rect(slide, 0, H - Inches(0.08), W, Inches(0.08), p["accent"])
-        add_tb(slide, title,
-               Inches(1.2), Inches(1.8), Inches(10.9), Inches(1.6),
-               size=44, bold=True, align=PP_ALIGN.CENTER)
-        add_tb(slide, subtitle,
-               Inches(1.2), Inches(3.5), Inches(10.9), Inches(0.9),
-               size=22, color=p["muted"], align=PP_ALIGN.CENTER)
-
-    elif layout == "quote":
-        add_accent_bar(slide)
-        quote  = s.get("quote") or body
-        author = s.get("author", "")
-        # Large decorative quote mark
-        add_tb(slide, "\\u201c",
-               Inches(0.8), Inches(0.6), Inches(2), Inches(2),
-               size=96, bold=True, color=p["accent"])
-        add_tb(slide, quote,
-               Inches(1.2), Inches(1.6), Inches(10.9), Inches(3.8),
-               size=26, align=PP_ALIGN.LEFT, wrap=True)
-        if author:
-            add_tb(slide, f"\\u2014 {author}",
-                   Inches(1.2), Inches(5.6), Inches(10.9), Inches(0.6),
-                   size=16, color=p["muted"])
-
-    elif layout == "two-column":
-        add_accent_bar(slide)
-        if title:
-            add_tb(slide, title,
-                   Inches(0.5), Inches(0.35), Inches(12.3), Inches(0.85),
-                   size=28, bold=True)
-        # Divider
-        add_rect(slide, Inches(6.5), Inches(1.5), Inches(0.03), Inches(5.5), p["muted"])
-        left_text  = s.get("leftContent", "")
-        right_text = s.get("rightContent", "")
-        left_buls  = s.get("leftBullets", [])
-        right_buls = s.get("rightBullets", [])
-        if left_text:
-            add_tb(slide, left_text,  Inches(0.5), Inches(1.5), Inches(5.7), Inches(5.5), size=16)
-        if right_text:
-            add_tb(slide, right_text, Inches(6.8), Inches(1.5), Inches(5.7), Inches(5.5), size=16)
-        top_l = Inches(1.5)
-        for b in left_buls:
-            add_tb(slide, f"\\u2022  {b}", Inches(0.5), top_l, Inches(5.7), Inches(0.6), size=16, color=p["body"])
-            top_l += Inches(0.62)
-        top_r = Inches(1.5)
-        for b in right_buls:
-            add_tb(slide, f"\\u2022  {b}", Inches(6.8), top_r, Inches(5.7), Inches(0.6), size=16, color=p["body"])
-            top_r += Inches(0.62)
-
-    elif layout == "chart":
-        add_accent_bar(slide)
-        if title:
-            add_tb(slide, title,
-                   Inches(0.5), Inches(0.35), Inches(12.3), Inches(0.85),
-                   size=28, bold=True)
-        chart_data_dict = s.get("chart")
-        if chart_data_dict and chart_data_dict.get("data"):
-            add_chart_to_slide(slide, chart_data_dict,
-                               Inches(0.8), Inches(1.4),
-                               Inches(11.7), Inches(5.6))
+        chart_colors = p["chart"]
+        if ctype == "pie":
+            for idx, point in enumerate(plot.series[0].points):
+                c = chart_colors[idx % len(chart_colors)]
+                point.format.fill.solid()
+                point.format.fill.fore_color.rgb = rgb(c)
         else:
-            add_tb(slide, "No chart data provided.",
-                   Inches(0.5), Inches(3.0), Inches(12.3), Inches(1),
-                   size=18, color=p["muted"], align=PP_ALIGN.CENTER)
+            for series in plot.series:
+                series.format.fill.solid()
+                series.format.fill.fore_color.rgb = rgb(chart_colors[0])
 
-    else:  # content / image / default
-        add_accent_bar(slide)
-        if title:
-            add_tb(slide, title,
-                   Inches(0.5), Inches(0.35), Inches(12.3), Inches(0.85),
-                   size=28, bold=True)
-        y = Inches(1.45)
-        if body:
-            add_tb(slide, body,
-                   Inches(0.6), y, Inches(12.1), Inches(1.1),
-                   size=17, color=p["body"])
-            y += Inches(1.2)
-        for bullet in bullets:
-            add_tb(slide, f"\\u2022  {bullet}",
-                   Inches(0.8), y, Inches(11.7), Inches(0.62),
-                   size=17, color=p["body"])
-            y += Inches(0.65)
+        try:
+            chart.has_legend = (ctype == "pie")
+            if chart.has_legend:
+                chart.legend.position = 2  # right
+        except: pass
+
+        try:
+            ax_color = rgb(p["muted"])
+            for axis in [chart.category_axis, chart.value_axis]:
+                axis.tick_labels.font.size = Pt(10)
+                axis.tick_labels.font.color.rgb = ax_color
+        except: pass
+
+        return graphic_frame
+    except Exception as e:
+        print(f"Chart error: {e}")
+        return None
+
+# ── Main Render Loop ───────────────────────────────────────────────────────
+for s in slides_data:
+    try:
+        slide = prs.slides.add_slide(blank)
+        set_bg(slide, p["slide"])
+        layout  = s.get("layout", "content")
+        title   = s.get("title", "")
+        subtitle= s.get("subtitle", "")
+        body    = s.get("body", "")
+        bullets = s.get("bullets", [])
+        
+        if layout == "title":
+            add_rect(slide, 0, 0, W, H, p["titleSlide"])
+            add_tb(slide, title, Inches(1.5), Inches(2.2), Inches(10.33), Inches(2.0), size=56, bold=True, align=PP_ALIGN.CENTER)
+            if subtitle:
+                add_tb(slide, subtitle, Inches(1.5), Inches(4.2), Inches(10.33), Inches(1.0), size=28, color=p["titleText"], align=PP_ALIGN.CENTER)
+
+        elif layout == "quote":
+            m = Inches(1.0)
+            add_rect(slide, m, m, W - 2*m, H - 2*m, p["cardBg"], border_color=p["cardBorder"], border_width=Pt(2))
+            quote = s.get("quote") or body
+            author = s.get("author", "")
+            add_tb(slide, "\\u201C", m + Inches(0.5), m + Inches(0.5), Inches(1), Inches(1), size=80, color=p["accent"], bold=True)
+            add_tb(slide, quote, m + Inches(1.0), m + Inches(1.5), W - 2*m - Inches(2.0), Inches(2.5), size=34, color=p["body"], align=PP_ALIGN.CENTER)
+            if author:
+                add_tb(slide, f"\\u2014 {author}", m + Inches(1.0), m + Inches(4.0), W - 2*m - Inches(2.0), Inches(0.6), size=22, color=p["accent"], bold=True, align=PP_ALIGN.CENTER)
+
+        elif layout == "image":
+            header_h = Inches(1.0)
+            add_rect(slide, 0, 0, W, header_h, p["header"])
+            add_tb(slide, title, Inches(0.8), Inches(0.2), W - Inches(1.6), header_h, size=34, bold=True)
+            m = Inches(0.8)
+            add_rect(slide, m, header_h + m, W - 2*m, H - header_h - 2*m, p["cardBg"], border_color=p["cardBorder"], border_width=Pt(2))
+            img_url = s.get("imageUrl") or s.get("url")
+            if img_url:
+                add_image(slide, img_url, m + Inches(0.4), header_h + m + Inches(0.4), W - 2*m - Inches(0.8), H - header_h - 2*m - Inches(0.8))
+
+        elif layout == "two-column":
+            header_h = Inches(1.0)
+            add_rect(slide, 0, 0, W, header_h, p["header"])
+            add_tb(slide, title, Inches(0.8), Inches(0.2), W - Inches(1.6), header_h, size=34, bold=True)
+            card_w = (W - Inches(2.4)) / 2
+            card_h = H - header_h - Inches(1.6)
+            add_rect(slide, Inches(0.8), header_h + Inches(0.8), card_w, card_h, p["cardBg"], border_color=p["cardBorder"], border_width=Pt(2))
+            add_rect(slide, Inches(0.8) + card_w + Inches(0.8), header_h + Inches(0.8), card_w, card_h, p["cardBg"], border_color=p["cardBorder"], border_width=Pt(2))
+            
+            # Left content
+            ly = header_h + Inches(1.3)
+            lbody = s.get("leftContent", "")
+            if lbody: 
+                add_tb(slide, lbody, Inches(1.3), ly, card_w - Inches(1.0), Inches(1.2), size=19, color=p["body"])
+                ly += Inches(1.2)
+            left_bullets = s.get("leftBullets", [])
+            for b in left_bullets:
+                add_tb(slide, f"\\u2022 {b}", Inches(1.5), ly, card_w - Inches(1.4), Inches(0.6), size=19, color=p["body"])
+                ly += Inches(0.55)
+            
+            # Right content
+            ry = header_h + Inches(1.3)
+            rbody = s.get("rightContent", "")
+            if rbody: 
+                add_tb(slide, rbody, Inches(0.8) + card_w + Inches(1.3), ry, card_w - Inches(1.0), Inches(1.2), size=19, color=p["body"])
+                ry += Inches(1.2)
+            right_bullets = s.get("rightBullets", [])
+            for b in right_bullets:
+                add_tb(slide, f"\\u2022 {b}", Inches(0.8) + card_w + Inches(1.5), ry, card_w - Inches(1.4), Inches(0.6), size=19, color=p["body"])
+                ry += Inches(0.55)
+
+        elif layout == "chart":
+            header_h = Inches(1.0)
+            add_rect(slide, 0, 0, W, header_h, p["header"])
+            add_tb(slide, title, Inches(0.8), Inches(0.2), W - Inches(1.6), header_h, size=34, bold=True)
+            m = Inches(0.8)
+            add_rect(slide, m, header_h + m, W - 2*m, H - header_h - 2*m, p["cardBg"], border_color=p["cardBorder"], border_width=Pt(2))
+            chart_data = s.get("chart")
+            if chart_data:
+                add_chart_to_slide(slide, chart_data, m + Inches(0.8), header_h + m + Inches(0.8), W - 2*m - Inches(1.6), H - header_h - 2*m - Inches(1.6))
+
+        else: # content / default
+            header_h = Inches(1.0)
+            add_rect(slide, 0, 0, W, header_h, p["header"])
+            add_tb(slide, title, Inches(0.8), Inches(0.2), W - Inches(1.6), header_h, size=34, bold=True)
+            m = Inches(0.8)
+            add_rect(slide, m, header_h + m, W - 2*m, H - header_h - 2*m, p["cardBg"], border_color=p["cardBorder"], border_width=Pt(2))
+            y = header_h + m + Inches(0.8)
+            if body:
+                add_tb(slide, body, m + Inches(0.8), y, W - 2*m - Inches(1.6), Inches(1.2), size=22, color=p["body"])
+                y += Inches(1.5)
+            for b in bullets:
+                add_tb(slide, f"\\u2022 {b}", m + Inches(1.1), y, W - 2*m - Inches(2.2), Inches(0.6), size=22, color=p["body"])
+                y += Inches(0.6)
+    except Exception as e:
+        print(f"Slide error: {e}")
 
 buf = io.BytesIO()
 prs.save(buf)
 buf.seek(0)
+# Use print() so artifact-panel.tsx can find it in stdout logs
 print("data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64," + base64.b64encode(buf.read()).decode())
 `.trim();
 }
