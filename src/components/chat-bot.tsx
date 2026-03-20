@@ -429,7 +429,7 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
   }, [input]);
 
   return (
-    <>
+    <div className="relative flex flex-col h-full w-full flex-1">
       {particle}
       <div
         className={cn(
@@ -556,7 +556,7 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
           open={isDeleteThreadPopupOpen}
         />
       </div>
-    </>
+    </div>
   );
 }
 
