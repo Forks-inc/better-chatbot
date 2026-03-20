@@ -89,8 +89,11 @@ export function ChatCanvasLayout({ children }: Props) {
   // ── Desktop: side-by-side resizable panels ───────────────────────────────
   if (breakpoint === "desktop") {
     return (
-      <div className="relative h-full w-full">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+      <div className="relative h-full w-full flex-1 min-h-0 flex flex-col">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-full flex-1 min-h-0"
+        >
           <ResizablePanel defaultSize={50} minSize={30}>
             {children}
           </ResizablePanel>
@@ -149,7 +152,7 @@ export function ChatCanvasLayout({ children }: Props) {
   // ── Tablet: side overlay at 55% width ────────────────────────────────────
   if (breakpoint === "tablet") {
     return (
-      <div className="relative h-full w-full overflow-hidden">
+      <div className="relative h-full w-full overflow-hidden flex-1 min-h-0 flex flex-col">
         {children}
 
         <AnimatePresence>
@@ -209,7 +212,7 @@ export function ChatCanvasLayout({ children }: Props) {
 
   // ── Mobile: bottom sheet ──────────────────────────────────────────────────
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden flex-1 min-h-0 flex flex-col">
       {children}
 
       <AnimatePresence>

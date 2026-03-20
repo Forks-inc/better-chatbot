@@ -49,10 +49,9 @@ export default function ArtifactRendererPage() {
         // @ts-ignore
         if (!(window as any).__Recharts__) {
           try {
+            const url1 = "https://esm.sh/recharts@2.12.7?bundle";
             // @ts-ignore
-            const rechartsModule = await import(
-              "https://esm.sh/recharts@2.12.7?bundle"
-            );
+            const rechartsModule = await import(url1);
             (window as any).__Recharts__ = rechartsModule;
           } catch (e) {
             console.warn("Failed to load recharts", e);
@@ -61,10 +60,9 @@ export default function ArtifactRendererPage() {
         // @ts-ignore
         if (!(window as any).__LucideReact__) {
           try {
+            const url2 = "https://esm.sh/lucide-react@0.364.0?bundle";
             // @ts-ignore
-            const lucideModule = await import(
-              "https://esm.sh/lucide-react@0.364.0?bundle"
-            );
+            const lucideModule = await import(url2);
             (window as any).__LucideReact__ = lucideModule;
           } catch (e) {
             console.warn("Failed to load lucide-react", e);
@@ -73,10 +71,9 @@ export default function ArtifactRendererPage() {
         // @ts-ignore
         if (!(window as any).__FramerMotion__) {
           try {
+            const url3 = "https://esm.sh/framer-motion@11.0.24?bundle";
             // @ts-ignore
-            const framerModule = await import(
-              "https://esm.sh/framer-motion@11.0.24?bundle"
-            );
+            const framerModule = await import(url3);
             (window as any).__FramerMotion__ = framerModule;
           } catch (e) {
             console.warn("Failed to load framer-motion", e);

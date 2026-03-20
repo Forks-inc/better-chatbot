@@ -433,8 +433,8 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
       {particle}
       <div
         className={cn(
-          emptyMessage && "justify-center pb-24",
-          "flex flex-col min-w-0 relative h-full z-40",
+          emptyMessage && "justify-center",
+          "flex flex-col min-w-0 relative flex-1 min-h-0 h-full z-40 overflow-hidden",
         )}
       >
         {isDragging && (
@@ -474,7 +474,7 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
             </div>
             <div
               className={
-                "flex flex-col gap-2 overflow-y-auto py-6 z-10 [scrollbar-gutter:stable_both-edges]"
+                "flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto py-6 px-4 z-10 [scrollbar-gutter:stable_both-edges]"
               }
               ref={containerRef}
               onScroll={handleScroll}
@@ -522,15 +522,15 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
               )}
 
               {error && <ErrorMessage error={error} />}
-              <div className="min-w-0 min-h-52" />
+              <div className="h-4 shrink-0" />
             </div>
           </>
         )}
 
         <div
           className={clsx(
-            messages.length && "absolute bottom-14",
-            "w-full z-10",
+            "w-full z-10 shrink-0",
+            messages.length > 0 && "px-4 pb-6 pt-2",
           )}
         >
           <div className="max-w-3xl mx-auto relative flex justify-center items-center -top-2">
