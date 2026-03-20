@@ -17,6 +17,10 @@ import {
   EllipsisIcon,
   FileIcon,
   Download,
+  AppWindow,
+  GitGraph,
+  Code,
+  PanelRight,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "ui/tooltip";
 import { Button } from "ui/button";
@@ -66,8 +70,8 @@ import { ModelProviderIcon } from "ui/model-provider-icon";
 import { appStore } from "@/app/store";
 import {
   parseMessageArtifacts,
-  stripArtifactTags,
   hasArtifactTags,
+  type ParsedArtifact,
 } from "lib/artifacts/parse-message-artifacts";
 import { BACKGROUND_COLORS, EMOJI_DATA } from "lib/const";
 
@@ -291,6 +295,55 @@ export const UserMessagePart = memo(
 );
 UserMessagePart.displayName = "UserMessagePart";
 
+function getArtifactIcon(type: string) {
+  if (type === "application/vnd.react") return <AppWindow className="size-5" />;
+  if (type === "application/vnd.mermaid")
+    return <GitGraph className="size-5" />;
+  if (type === "code") return <Code className="size-5" />;
+  return <FileIcon className="size-5" />;
+}
+
+export function ArtifactCard({ artifact }: { artifact: ParsedArtifact }) {
+  return (
+    <div
+      className="mt-2 mb-2 border border-border/50 bg-card/50 rounded-xl p-3 flex flex-row items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors shadow-sm"
+      onClick={() => {
+        appStore.getState().mutate({
+          artifactsPanelOpen: true,
+          currentArtifactId: artifact.id,
+        });
+      }}
+    >
+      <div className="flex items-center justify-center size-10 rounded-lg bg-background border border-border/50 text-foreground shrink-0 shadow-sm">
+        {getArtifactIcon(artifact.type)}
+      </div>
+      <div className="flex flex-col flex-1 min-w-0">
+        <span className="font-semibold text-sm truncate text-foreground">
+          {artifact.title || "Artifact"}
+        </span>
+        <span className="text-xs text-muted-foreground truncate flex items-center gap-1">
+          {artifact.generating ? (
+            <span className="flex items-center gap-1">
+              <Loader className="size-3 animate-spin" /> Generating...
+            </span>
+          ) : (
+            `Artifact · ${artifact.language || artifact.type}`
+          )}
+        </span>
+      </div>
+      <div className="hidden sm:flex items-center gap-2 shrink-0">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 gap-1 rounded-full px-3 text-xs bg-background"
+        >
+          Open Canvas <PanelRight className="size-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export const AssistMessagePart = memo(function AssistMessagePart({
   part,
   showActions,
@@ -341,12 +394,12 @@ export const AssistMessagePart = memo(function AssistMessagePart({
     }));
   }, [part.text, message.id]);
 
-  // Strip <artifact> tags from displayed text
-  const displayText = useMemo(
-    () =>
-      hasArtifactTags(part.text) ? stripArtifactTags(part.text) : part.text,
-    [part.text],
-  );
+  const parsedParts = useMemo(() => {
+    if (!hasArtifactTags(part.text)) {
+      return [{ type: "text", text: part.text }];
+    }
+    return parseMessageArtifacts(part.text);
+  }, [part.text]);
 
   const deleteMessage = useCallback(async () => {
     if (!setMessages) return;
@@ -413,7 +466,14 @@ export const AssistMessagePart = memo(function AssistMessagePart({
           "opacity-50 border border-destructive bg-card rounded-lg": isError,
         })}
       >
-        <Markdown>{displayText}</Markdown>
+        {parsedParts.map((p, i) => {
+          if (p.type === "text") {
+            return p.text ? <Markdown key={i}>{p.text}</Markdown> : null;
+          } else if (p.type === "artifact" && p.artifact) {
+            return <ArtifactCard key={i} artifact={p.artifact} />;
+          }
+          return null;
+        })}
       </div>
       {showActions && (
         <div className="flex w-full">

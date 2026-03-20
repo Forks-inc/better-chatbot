@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ToolUIPart } from "ai";
 import { appStore } from "@/app/store";
 import { generateUUID } from "lib/utils";
-import { FileSpreadsheet, Presentation } from "lucide-react";
+// No lucide icons needed here since ArtifactCard handles them
+import { ArtifactCard } from "../message-parts";
 
 interface DocumentResult {
   artifactId?: string;
@@ -23,13 +24,16 @@ export function DocumentCreatorInvocation({
 }) {
   const state = part.state;
   const output = state.startsWith("output") ? (part as any).output : null;
+  const [internalId, setInternalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!output) return;
     const result = output as DocumentResult;
     if (!result?.content) return;
 
-    const artifactId = result.artifactId ?? generateUUID();
+    const idToUse = result.artifactId ?? generateUUID();
+    setInternalId(idToUse);
+    const artifactId = idToUse;
     appStore.setState((prev) => ({
       artifacts: {
         ...prev.artifacts,
@@ -49,21 +53,26 @@ export function DocumentCreatorInvocation({
   }, [output]);
 
   const isLoading = state.startsWith("input");
-  const Icon = docType === "presentation" ? Presentation : FileSpreadsheet;
   const label =
     docType === "presentation"
       ? "Creating presentation..."
       : "Creating spreadsheet...";
-  const doneLabel =
-    docType === "presentation" ? "Presentation ready" : "Spreadsheet ready";
 
   return (
     <div className="px-6 py-2">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="size-3.5 shrink-0" />
-        <span>{isLoading ? label : doneLabel}</span>
-        {isLoading && <span className="ml-1 animate-pulse">●</span>}
-      </div>
+      <ArtifactCard
+        artifact={{
+          id: internalId || "pending",
+          title: (output as DocumentResult)?.title || label,
+          content: "",
+          type:
+            docType === "presentation"
+              ? "application/vnd.presentation"
+              : "application/vnd.spreadsheet",
+          language: docType === "presentation" ? "pptx" : "xlsx",
+          generating: isLoading,
+        }}
+      />
     </div>
   );
 }
