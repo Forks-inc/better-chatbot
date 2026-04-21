@@ -1,45 +1,53 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { appStore } from "@/app/store";
+import { useCopy } from "@/hooks/use-copy";
+import type { Artifact } from "@/types/artifact";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Code,
-  Play,
-  RefreshCw,
-  X,
+  iconBounce,
+  slideInRight,
+  staggerContainer,
+  staggerItem,
+  tabSwitch,
+} from "lib/animations";
+import { callCodeRunWorker } from "lib/code-runner/call-worker";
+import { buildPptxExporterCode } from "lib/code-runner/presentation-exporter";
+import { buildXlsxExporterCode } from "lib/code-runner/spreadsheet-exporter";
+import { cn } from "lib/utils";
+import {
+  Check,
   ChevronLeft,
   ChevronRight,
-  Download,
+  Code,
   Copy,
-  Check,
+  Download,
   FileSpreadsheet,
-  Presentation,
   Loader2,
   Maximize2,
   Minimize2,
+  MoreVertical,
+  Play,
+  Presentation,
+  RefreshCw,
   Scissors,
   Share2,
   Sparkles,
-  MoreVertical,
+  X,
 } from "lucide-react";
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "ui/dropdown-menu";
-import { toast } from "sonner";
-import { appStore } from "@/app/store";
-import { Button } from "ui/button";
-import { cn } from "lib/utils";
-import type { Artifact } from "@/types/artifact";
 import { ArtifactCodeEditor } from "./artifact-code-editor";
 import { ArtifactPreview } from "./artifact-preview";
-import { SpreadsheetPreview } from "./spreadsheet-preview";
 import { PresentationPreview } from "./presentation-preview";
-import { useCopy } from "@/hooks/use-copy";
-import { callCodeRunWorker } from "lib/code-runner/call-worker";
-import { buildPptxExporterCode } from "lib/code-runner/presentation-exporter";
-import { buildXlsxExporterCode } from "lib/code-runner/spreadsheet-exporter";
+import { SpreadsheetPreview } from "./spreadsheet-preview";
 
 interface Props {
   artifact: Artifact | null | undefined;
@@ -76,7 +84,6 @@ function TypeIcon({ type }: { type: string | undefined }) {
   return null;
 }
 
-/** Types that support refresh (iframe-based previews) */
 function supportsRefresh(type: string | undefined) {
   return (
     type === "text/html" ||
@@ -86,7 +93,6 @@ function supportsRefresh(type: string | undefined) {
   );
 }
 
-/** Types that support screen capture */
 function supportsCapture(type: string | undefined) {
   return (
     type === "text/html" ||
@@ -126,7 +132,6 @@ export function ArtifactPanel({
   const handleDownload = useCallback(async () => {
     if (!artifact?.content) return;
 
-    // Native export via Python+Pyodide for presentation/spreadsheet
     if (isPresentation || isSpreadsheet) {
       setExporting(true);
       try {
@@ -139,7 +144,6 @@ export function ArtifactPanel({
           timeout: 60000,
         });
 
-        // Find the data URI in stdout logs (printed by Python)
         const dataLog = [...(result.logs ?? [])].reverse().find((l) =>
           String(l.args?.[0]?.value ?? "")
             .trimStart()
@@ -164,7 +168,6 @@ export function ArtifactPanel({
       return;
     }
 
-    // Default: plain text download
     const ext = artifact.language ?? "txt";
     const blob = new Blob([artifact.content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -179,7 +182,6 @@ export function ArtifactPanel({
 
   const handleCapture = useCallback(
     (data: { selectionImg: string; artifactImg: string }) => {
-      // Copy selection image to clipboard if available
       fetch(data.selectionImg)
         .then((r) => r.blob())
         .then((blob) => {
@@ -187,7 +189,6 @@ export function ArtifactPanel({
           return navigator.clipboard.write([item]);
         })
         .catch(() => {
-          // Fallback: download the image
           const a = document.createElement("a");
           a.href = data.selectionImg;
           a.download = "capture.png";
@@ -236,19 +237,24 @@ export function ArtifactPanel({
   const showCapture =
     activeTab === "preview" && supportsCapture(artifact.type) && !isStreaming;
 
-  const panelContent = (
-    <div
+  return (
+    <motion.div
+      variants={slideInRight}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
       className={cn(
-        "flex flex-col bg-background border-border",
-        fullscreen ? "fixed inset-0 z-50 border" : "h-full w-full border-l",
+        "flex flex-col glass-sidebar",
+        fullscreen ? "fixed inset-0 z-50" : "h-full w-full border-l",
       )}
     >
-      {/* Row 1: tabs (left) + actions (right) */}
-      <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/30 px-3 py-2">
-        {/* Tab Toggle + streaming indicator */}
-        <div className="flex items-center gap-2">
+      <motion.div
+        variants={staggerContainer}
+        className="flex items-center justify-between gap-2 border-b border-border/30 glass px-3 py-2"
+      >
+        <motion.div variants={staggerItem} className="flex items-center gap-2">
           <div className="flex items-center rounded-lg bg-muted p-0.5">
-            <button
+            <motion.button
               onClick={() => setActiveTab("code")}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
@@ -256,12 +262,13 @@ export function ArtifactPanel({
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
               )}
+              whileTap={{ scale: 0.95 }}
             >
               <Code className="size-3.5" />
               {isNativeDoc ? "JSON" : "Code"}
-            </button>
+            </motion.button>
             {hasPreview && (
-              <button
+              <motion.button
                 onClick={() => setActiveTab("preview")}
                 className={cn(
                   "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
@@ -269,20 +276,27 @@ export function ArtifactPanel({
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
                 )}
+                whileTap={{ scale: 0.95 }}
               >
                 <Play className="size-3.5" />
                 Preview
-              </button>
+              </motion.button>
             )}
           </div>
           {isStreaming && activeTab === "code" && (
-            <RefreshCw className="size-3.5 animate-spin text-muted-foreground" />
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <RefreshCw className="size-3.5 text-muted-foreground" />
+            </motion.div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Right actions — fixed width, never compressed */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          {/* Version navigation */}
+        <motion.div
+          variants={staggerItem}
+          className="flex items-center gap-0.5 shrink-0"
+        >
           {totalVersions > 1 && (
             <>
               <Button
@@ -294,9 +308,15 @@ export function ArtifactPanel({
               >
                 <ChevronLeft className="size-3.5" />
               </Button>
-              <span className="text-xs text-muted-foreground tabular-nums px-0.5 select-none">
+              <motion.span
+                className="text-xs text-muted-foreground tabular-nums px-0.5 select-none"
+                key={currentIndex}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
                 {currentIndex + 1}/{totalVersions}
-              </span>
+              </motion.span>
               <Button
                 size="icon"
                 variant="ghost"
@@ -310,73 +330,85 @@ export function ArtifactPanel({
             </>
           )}
 
-          {/* Refresh (HTML/React previews only) */}
           {showRefresh && (
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                title="Refresh preview"
+                onClick={() => setRefreshKey((k) => k + 1)}
+              >
+                <RefreshCw className="size-3.5" />
+              </Button>
+            </motion.div>
+          )}
+
+          {showCapture && (
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  "size-7",
+                  capturing && "text-primary bg-primary/10",
+                )}
+                title="Capture selection"
+                onClick={() => setCapturing((v) => !v)}
+              >
+                <Scissors className="size-3.5" />
+              </Button>
+            </motion.div>
+          )}
+
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
             <Button
               size="icon"
               variant="ghost"
               className="size-7"
-              title="Refresh preview"
-              onClick={() => setRefreshKey((k) => k + 1)}
+              title="Ask AI to edit"
+              onClick={() => {
+                appStore.getState().mutate({
+                  pendingAutoMessage: `Please update the artifact "${artifact.title}"`,
+                });
+              }}
             >
-              <RefreshCw className="size-3.5" />
+              <Sparkles className="size-3.5 text-primary" />
             </Button>
-          )}
+          </motion.div>
 
-          {/* Capture / screenshot */}
-          {showCapture && (
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
             <Button
               size="icon"
               variant="ghost"
-              className={cn(
-                "size-7",
-                capturing && "text-primary bg-primary/10",
-              )}
-              title="Capture selection"
-              onClick={() => setCapturing((v) => !v)}
+              className="size-7"
+              title="Copy"
+              onClick={() => copy(artifact.content ?? "")}
             >
-              <Scissors className="size-3.5" />
+              <motion.div
+                key={copied ? "checked" : "copy"}
+                variants={iconBounce}
+                initial="initial"
+                animate="animate"
+              >
+                {copied ? (
+                  <Check className="size-3.5" />
+                ) : (
+                  <Copy className="size-3.5" />
+                )}
+              </motion.div>
             </Button>
-          )}
-
-          {/* Ask AI to edit */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            title="Ask AI to edit"
-            onClick={() => {
-              appStore.getState().mutate({
-                pendingAutoMessage: `Please update the artifact "${artifact.title}"`,
-              });
-            }}
-          >
-            <Sparkles className="size-3.5 text-primary" />
-          </Button>
-
-          {/* Copy */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7"
-            title="Copy"
-            onClick={() => copy(artifact.content ?? "")}
-          >
-            {copied ? (
-              <Check className="size-3.5" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
-          </Button>
+          </motion.div>
 
           <div className="w-px h-4 bg-border mx-0.5" />
 
-          {/* More Actions Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="size-7">
-                <MoreVertical className="size-3.5" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button size="icon" variant="ghost" className="size-7">
+                  <MoreVertical className="size-3.5" />
+                </Button>
+              </motion.div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={handleDownload} disabled={exporting}>
@@ -406,20 +438,23 @@ export function ArtifactPanel({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Close */}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            onClick={onClose}
-          >
-            <X className="size-3.5" />
-          </Button>
-        </div>
-      </div>
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              onClick={onClose}
+            >
+              <X className="size-3.5" />
+            </Button>
+          </motion.div>
+        </motion.div>
+      </motion.div>
 
-      {/* Row 2: title + type badge */}
-      <div className="flex items-center gap-2 border-b border-border bg-muted/10 px-4 py-1.5 min-h-[32px]">
+      <motion.div
+        variants={staggerItem}
+        className="flex items-center gap-2 border-b border-border bg-muted/10 px-4 py-1.5 min-h-[32px]"
+      >
         <TypeIcon type={artifact.type} />
         <span className="text-xs font-medium truncate text-foreground/80 flex-1 min-w-0">
           {artifact.title}
@@ -429,33 +464,41 @@ export function ArtifactPanel({
             {artifact.language}
           </span>
         )}
-      </div>
+      </motion.div>
 
-      {/* Content */}
       <div className="relative flex-1 overflow-hidden flex flex-col">
-        {activeTab === "code" ? (
-          <ArtifactCodeEditor
-            artifact={artifact}
-            readOnly={isStreaming}
-            onContentChange={handleContentChange}
-          />
-        ) : isPresentation ? (
-          <PresentationPreview artifact={artifact} />
-        ) : isSpreadsheet ? (
-          <SpreadsheetPreview artifact={artifact} />
-        ) : (
-          <ArtifactPreview
-            artifact={artifact}
-            currentCode={currentCode}
-            capturing={capturing}
-            onCapture={handleCapture}
-            onCaptureEnd={() => setCapturing(false)}
-            refreshKey={refreshKey}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            variants={tabSwitch}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="h-full w-full"
+          >
+            {activeTab === "code" ? (
+              <ArtifactCodeEditor
+                artifact={artifact}
+                readOnly={isStreaming}
+                onContentChange={handleContentChange}
+              />
+            ) : isPresentation ? (
+              <PresentationPreview artifact={artifact} />
+            ) : isSpreadsheet ? (
+              <SpreadsheetPreview artifact={artifact} />
+            ) : (
+              <ArtifactPreview
+                artifact={artifact}
+                currentCode={currentCode}
+                capturing={capturing}
+                onCapture={handleCapture}
+                onCaptureEnd={() => setCapturing(false)}
+                refreshKey={refreshKey}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
-
-  return panelContent;
 }

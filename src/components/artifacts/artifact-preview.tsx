@@ -1,15 +1,17 @@
 "use client";
 
+import type { Artifact } from "@/types/artifact";
 import {
-  SandpackProvider,
-  SandpackPreview,
   type SandpackPredefinedTemplate,
+  SandpackPreview,
+  SandpackProvider,
   type SandpackProviderProps,
 } from "@codesandbox/sandpack-react";
-import type { Artifact } from "@/types/artifact";
+import { motion } from "framer-motion";
+import { fadeIn, tabSwitch } from "lib/animations";
+import { MermaidDiagram } from "../mermaid-diagram";
 import { HtmlPreview } from "./html-preview";
 import { ReactIframePreview } from "./react-iframe-preview";
-import { MermaidDiagram } from "../mermaid-diagram";
 import { SvgPreview } from "./svg-preview";
 
 interface Props {
@@ -31,76 +33,108 @@ export function ArtifactPreview({
 }: Props) {
   const content = currentCode ?? artifact.content ?? "";
 
-  // HTML → fast iframe with capture support
   if (
     artifact.type === "text/html" ||
     artifact.type === "application/vnd.code-html"
   ) {
     return (
-      <HtmlPreview
-        key={refreshKey}
-        artifact={{ ...artifact, content }}
-        capturing={capturing}
-        onCapture={onCapture}
-        onCaptureEnd={onCaptureEnd}
-      />
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="h-full w-full"
+      >
+        <HtmlPreview
+          key={refreshKey}
+          artifact={{ ...artifact, content }}
+          capturing={capturing}
+          onCapture={onCapture}
+          onCaptureEnd={onCaptureEnd}
+        />
+      </motion.div>
     );
   }
 
-  // React → lightweight iframe renderer (faster than Sandpack)
   if (
     artifact.type === "application/vnd.react" ||
     artifact.type === "application/vnd.ant.react"
   ) {
     return (
-      <ReactIframePreview
-        key={refreshKey}
-        artifact={{ ...artifact, content }}
-        capturing={capturing}
-        onCapture={onCapture}
-        onCaptureEnd={onCaptureEnd}
-      />
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="h-full w-full"
+      >
+        <ReactIframePreview
+          key={refreshKey}
+          artifact={{ ...artifact, content }}
+          capturing={capturing}
+          onCapture={onCapture}
+          onCaptureEnd={onCaptureEnd}
+        />
+      </motion.div>
     );
   }
 
-  // Mermaid diagrams
   if (artifact.type === "application/vnd.mermaid") {
     return (
-      <div className="h-full w-full overflow-auto p-4">
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="h-full w-full overflow-auto p-4"
+      >
         <MermaidDiagram chart={content} />
-      </div>
+      </motion.div>
     );
   }
 
-  // SVG previews
   if (artifact.type === "image/svg+xml") {
-    return <SvgPreview artifact={{ ...artifact, content }} />;
+    return (
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="h-full w-full"
+      >
+        <SvgPreview artifact={{ ...artifact, content }} />
+      </motion.div>
+    );
   }
 
-  // Non-previewable types
   if (
     artifact.type === "code" ||
     artifact.type === "text/plain" ||
     artifact.type === "text/markdown"
   ) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="flex h-full w-full items-center justify-center text-muted-foreground"
+      >
         <p className="text-sm">
           Preview is only available for React and HTML artifacts
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   if (!artifact.content) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+      <motion.div
+        variants={fadeIn}
+        initial="hidden"
+        animate="visible"
+        className="flex h-full w-full items-center justify-center text-muted-foreground"
+      >
         No content to preview
-      </div>
+      </motion.div>
     );
   }
 
-  // Fallback: Sandpack for any other type
   const template: SandpackPredefinedTemplate = "static";
   const files = { "index.html": content };
   const customSetup: SandpackProviderProps["customSetup"] = {
@@ -111,7 +145,13 @@ export function ArtifactPreview({
   };
 
   return (
-    <div className="h-full w-full overflow-hidden">
+    <motion.div
+      variants={tabSwitch}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      className="h-full w-full overflow-hidden"
+    >
       <SandpackProvider
         template={template}
         files={files}
@@ -126,6 +166,6 @@ export function ArtifactPreview({
           style={{ height: "100%", width: "100%" }}
         />
       </SandpackProvider>
-    </div>
+    </motion.div>
   );
 }

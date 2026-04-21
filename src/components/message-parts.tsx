@@ -1,79 +1,79 @@
 "use client";
 
-import { FileUIPart, getToolName, ToolUIPart, UIMessage } from "ai";
+import { useCopy } from "@/hooks/use-copy";
+import type { UseChatHelpers } from "@ai-sdk/react";
+import { FileUIPart, ToolUIPart, UIMessage, getToolName } from "ai";
+import { cn, safeJSONParse, truncateString } from "lib/utils";
 import {
+  AppWindow,
   Check,
-  Copy,
-  Loader,
-  Pencil,
   ChevronDownIcon,
-  ChevronUp,
-  RefreshCw,
-  X,
-  Trash2,
   ChevronRight,
-  TriangleAlert,
-  HammerIcon,
+  ChevronUp,
+  Code,
+  Copy,
+  Download,
   EllipsisIcon,
   FileIcon,
-  Download,
-  AppWindow,
   GitGraph,
-  Code,
+  HammerIcon,
+  Loader,
   PanelRight,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+  X,
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "ui/tooltip";
-import { Button } from "ui/button";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "ui/badge";
-import { Markdown } from "./markdown";
-import { cn, safeJSONParse, truncateString } from "lib/utils";
+import { Button } from "ui/button";
 import JsonView from "ui/json-view";
-import { useMemo, useState, memo, useEffect, useRef, useCallback } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "ui/tooltip";
+import { Markdown } from "./markdown";
 import { MessageEditor } from "./message-editor";
-import type { UseChatHelpers } from "@ai-sdk/react";
-import { useCopy } from "@/hooks/use-copy";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { SelectModel } from "./select-model";
 import {
   deleteMessageAction,
   deleteMessagesByChatIdAfterTimestampAction,
 } from "@/app/api/chat/actions";
+import { AnimatePresence, motion } from "framer-motion";
+import { SelectModel } from "./select-model";
 
+import { ChatMetadata, ChatModel, ManualToolConfirmTag } from "app-types/chat";
 import { toast } from "sonner";
 import { safe } from "ts-safe";
-import { ChatMetadata, ChatModel, ManualToolConfirmTag } from "app-types/chat";
 
-import { useTranslations } from "next-intl";
 import { extractMCPToolId } from "lib/ai/mcp/mcp-tool-id";
+import { useTranslations } from "next-intl";
 import { Separator } from "ui/separator";
 
-import { TextShimmer } from "ui/text-shimmer";
-import equal from "lib/equal";
 import {
   VercelAIWorkflowToolStreamingResult,
   VercelAIWorkflowToolStreamingResultTag,
 } from "app-types/workflow";
-import { Avatar, AvatarFallback, AvatarImage } from "ui/avatar";
 import { DefaultToolName, ImageToolName } from "lib/ai/tools";
+import equal from "lib/equal";
 import {
   Shortcut,
   getShortcutKeyList,
   isShortcutEvent,
 } from "lib/keyboard-shortcuts";
+import { Avatar, AvatarFallback, AvatarImage } from "ui/avatar";
+import { TextShimmer } from "ui/text-shimmer";
 
-import { WorkflowInvocation } from "./tool-invocation/workflow-invocation";
-import { DocumentCreatorInvocation } from "./tool-invocation/document-creator";
-import dynamic from "next/dynamic";
-import { notify } from "lib/notify";
-import { ModelProviderIcon } from "ui/model-provider-icon";
 import { appStore } from "@/app/store";
 import {
-  parseMessageArtifacts,
-  hasArtifactTags,
   type ParsedArtifact,
+  hasArtifactTags,
+  parseMessageArtifacts,
 } from "lib/artifacts/parse-message-artifacts";
 import { BACKGROUND_COLORS, EMOJI_DATA } from "lib/const";
+import { notify } from "lib/notify";
+import dynamic from "next/dynamic";
+import { ModelProviderIcon } from "ui/model-provider-icon";
+import { DocumentCreatorInvocation } from "./tool-invocation/document-creator";
+import { WorkflowInvocation } from "./tool-invocation/workflow-invocation";
 
 type MessagePart = UIMessage["parts"][number];
 type TextMessagePart = Extract<MessagePart, { type: "text" }>;
@@ -305,8 +305,10 @@ function getArtifactIcon(type: string) {
 
 export function ArtifactCard({ artifact }: { artifact: ParsedArtifact }) {
   return (
-    <div
-      className="mt-2 mb-2 border border-border/50 bg-card/50 rounded-xl p-3 flex flex-row items-center gap-4 cursor-pointer hover:bg-muted/50 transition-colors shadow-sm"
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-2 mb-2 glass-card rounded-xl p-3 flex flex-row items-center gap-4 cursor-pointer hover:border-primary/30 transition-all shadow-sm"
       onClick={() => {
         appStore.getState().mutate({
           artifactsPanelOpen: true,
@@ -314,7 +316,7 @@ export function ArtifactCard({ artifact }: { artifact: ParsedArtifact }) {
         });
       }}
     >
-      <div className="flex items-center justify-center size-10 rounded-lg bg-background border border-border/50 text-foreground shrink-0 shadow-sm">
+      <div className="flex items-center justify-center size-10 rounded-lg glass text-foreground shrink-0">
         {getArtifactIcon(artifact.type)}
       </div>
       <div className="flex flex-col flex-1 min-w-0">
@@ -335,12 +337,12 @@ export function ArtifactCard({ artifact }: { artifact: ParsedArtifact }) {
         <Button
           size="sm"
           variant="outline"
-          className="h-8 gap-1 rounded-full px-3 text-xs bg-background"
+          className="h-8 gap-1 rounded-full px-3 text-xs glass-button"
         >
           Open Canvas <PanelRight className="size-3.5" />
         </Button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

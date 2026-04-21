@@ -11,6 +11,7 @@
 !.yarn/versions
 *.mcp-config.json
 # testing
+/promotional-video
 /coverage
 /tests/.auth
 test-results/
