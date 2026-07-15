@@ -213,7 +213,6 @@ describe("User Validations", () => {
     it("should validate correct password data", () => {
       const validData = {
         userId: "123e4567-e89b-12d3-a456-426614174000",
-        isCurrentUser: false,
         newPassword: "SecurePass123!",
         confirmPassword: "SecurePass123!",
       };
@@ -228,7 +227,6 @@ describe("User Validations", () => {
     it("should reject when passwords do not match", () => {
       const invalidData = {
         userId: "123e4567-e89b-12d3-a456-426614174000",
-        isCurrentUser: false,
         newPassword: "SecurePass123!",
         confirmPassword: "DifferentPass123!",
       };
@@ -245,7 +243,6 @@ describe("User Validations", () => {
     it("should reject invalid UUID", () => {
       const invalidData = {
         userId: "not-a-uuid",
-        isCurrentUser: false,
         newPassword: "SecurePass123!",
         confirmPassword: "SecurePass123!",
       };
@@ -269,7 +266,6 @@ describe("User Validations", () => {
       for (const weakPassword of weakPasswords) {
         const invalidData = {
           userId: "123e4567-e89b-12d3-a456-426614174000",
-          isCurrentUser: false,
           newPassword: weakPassword,
           confirmPassword: weakPassword,
         };
@@ -289,7 +285,6 @@ describe("User Validations", () => {
       for (const strongPassword of strongPasswords) {
         const validData = {
           userId: "123e4567-e89b-12d3-a456-426614174000",
-          isCurrentUser: false,
           newPassword: strongPassword,
           confirmPassword: strongPassword,
         };
@@ -308,6 +303,17 @@ describe("User Validations", () => {
 
       const result = UpdateUserPasswordSchema.safeParse(incompleteData);
       expect(result.success).toBe(false);
+    });
+
+    it("should not require client-provided current user state", () => {
+      const formData = {
+        userId: "123e4567-e89b-12d3-a456-426614174000",
+        newPassword: "SecurePass123!",
+        confirmPassword: "SecurePass123!",
+      };
+
+      const result = UpdateUserPasswordSchema.safeParse(formData);
+      expect(result.success).toBe(true);
     });
   });
 

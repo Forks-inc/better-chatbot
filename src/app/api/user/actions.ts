@@ -177,14 +177,8 @@ export const updateUserPasswordAction = validatedActionWithUserManagePermission(
     _formData,
   ): Promise<UpdateUserPasswordActionState> => {
     const t = await getTranslations("User.Profile.common");
-    const {
-      newPassword,
-      isCurrentUser: isCurrentUserParam,
-      currentPassword,
-    } = data;
+    const { newPassword, currentPassword } = data;
     const { hasPassword } = await getUserAccounts(userId);
-
-    const isCurrentUser = isCurrentUserParam ? isOwnResource : false;
 
     if (!hasPassword) {
       return {
@@ -194,7 +188,7 @@ export const updateUserPasswordAction = validatedActionWithUserManagePermission(
     }
 
     try {
-      if (isCurrentUser) {
+      if (isOwnResource) {
         if (!currentPassword) {
           return {
             success: false,

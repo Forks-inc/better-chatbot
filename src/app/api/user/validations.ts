@@ -34,7 +34,6 @@ export const DeleteUserSchema = z.object({
 export const UpdateUserPasswordSchema = z
   .object({
     userId: z.string().uuid("Invalid user ID"),
-    isCurrentUser: z.boolean(),
     newPassword: passwordSchema,
     confirmPassword: passwordSchema,
     currentPassword: z.string().optional(),
@@ -44,12 +43,6 @@ export const UpdateUserPasswordSchema = z
       ctx.addIssue({
         code: "custom",
         message: UpdateUserPasswordError.PASSWORD_MISMATCH,
-      });
-    }
-    if (data.isCurrentUser && !data.currentPassword) {
-      ctx.addIssue({
-        code: "custom",
-        message: UpdateUserPasswordError.CURRENT_PASSWORD_REQUIRED,
       });
     }
   });
